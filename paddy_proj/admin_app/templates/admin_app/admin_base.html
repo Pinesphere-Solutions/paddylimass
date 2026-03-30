@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Admin</title>
+  <link rel="icon" type="image/png" href="{% static 'media/MA.png' %}?v=2" />
+  <link rel="shortcut icon" href="{% static 'media/MA.png' %}?v=2" />
+  <link rel="stylesheet" href="{% static 'paddy_app/css/admin_base.css' %}" />
+  <link rel="stylesheet" href="{% static 'paddy_app/css/responsive.css' %}" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">  
+  <style>
+    /* CSS Custom Properties for consistency */
+    :root {
+      --sidebar-width: 280px;
+      --sidebar-collapsed-width: 80px;
+      --sidebar-bg: #ffffff;
+      --sidebar-text: #333333;
+      --sidebar-hover: rgba(0, 0, 0, 0.05);
+      --sidebar-active: rgba(0, 0, 0, 0.1);
+      --sidebar-border: #e0e0e0;
+      --primary-color: #28a745;
+      --transition-speed: 0.3s;
+      --smooth-easing: cubic-bezier(0.4, 0, 0.2, 1);
+      --nav-item-height: 48px;
+      --nav-icon-size: 20px;
+      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Performance optimizations for smooth animations */
+    * {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    /* Enable hardware acceleration for smooth transforms */
+    .sidebar,
+    .main-content,
+    .hamburger {
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      perspective: 1000px;
+    }
+    
+    /* ADMIN BASE TEMPLATE STYLES - HIGH PRIORITY */
+    /* These styles ensure consistent sidebar appearance across all admin pages */
+    
+    /* Force consistent sidebar styling across all pages */
+    body.admin-page {
+      font-family: 'Inter', sans-serif !important;
+      background-color: #f4f6f8 !important;
+      color: #333 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    
+    /* Ensure sidebar container has consistent styling */
+    body.admin-page .sidebar {
+      width: var(--sidebar-width, 260px) !important;
+      height: 100vh !important;
+      height: 100dvh !important; /* Use dynamic viewport height for mobile browsers */
+      background-color: var(--sidebar-bg, #ffffff) !important;
+      color: var(--sidebar-text, #333333) !important;
+      display: flex !important;
+      flex-direction: column !important;
+      transition: transform var(--transition-speed, 0.3s) cubic-bezier(0.4, 0, 0.2, 1) !important;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      z-index: 1000 !important;
+      box-shadow: var(--shadow, 0 4px 6px rgba(0, 0, 0, 0.1)) !important;
+      border-right: 1px solid var(--sidebar-border, #e0e0e0) !important;
+      overflow: hidden !important; /* Prevent whole sidebar scroll */
+      overscroll-behavior: contain !important; /* Prevent body scroll chaining */
+      will-change: transform !important;
+      transform: translateX(0) !important;
+    }
+    
+    /* Sidebar header consistency */
+    body.admin-page .sidebar-header {
+      padding: 24px 20px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 12px !important;
+      border-bottom: 1px solid var(--sidebar-border, #e0e0e0) !important;
+      background-color: var(--sidebar-bg, #ffffff) !important;
+      /* position: sticky !important; -- Removed */
+      /* top: 0 !important; */
+      z-index: 10 !important;
+      flex-shrink: 0 !important; /* Don't shrink */
+    }
+    
+    /* Logo icon styling */
+    body.admin-page .sidebar-logo {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      transition: all 0.3s ease !important;
+    }
+    
+    body.admin-page .sidebar-logo:hover {
+      transform: scale(1.1) !important;
+      color: #28a745 !important;
+    }
+    
+    /* Logo image styling */
+    body.admin-page .sidebar-logo-img {
+      width: 80px !important;
+      height: 80px !important;
+      object-fit: contain !important;
+      margin-bottom: 8px !important;
+      transition: transform 0.3s ease !important;
+    }
+    
+    body.admin-page .sidebar-logo-img:hover {
+      transform: scale(1.05) !important;
+    }
+    
+    /* Sidebar title styling */
+    body.admin-page .sidebar-title {
+      font-size: 20px !important;
+      font-weight: 600 !important;
+      color: var(--sidebar-text, #333333) !important;
+      margin: 0 !important;
+    }
+    
+    /* Sidebar navigation consistency */
+    /* AFTER */
+    body.admin-page .sidebar-nav {
+      flex: 1 !important;
+      overflow-y: scroll !important;
+      overflow-x: hidden !important;
+      padding: 15px 0 50px 0 !important;
+      -webkit-overflow-scrolling: touch !important;
+    }
+    
+    /* Navigation menu items */
+    body.admin-page .nav-menu {
+      list-style: none !important;
+      padding: 0 0 30px 0 !important; /* Extra padding at bottom */
+      margin: 0 !important;
+    }
+
+    /* Custom scrollbar for sidebar navigation - WebKit browsers */
+    body.admin-page .sidebar-nav::-webkit-scrollbar {
+      width: 8px !important;
+    }
+
+    body.admin-page .sidebar-nav::-webkit-scrollbar-track {
+      background: #f5f5f5 !important;
+      border-radius: 10px !important;
+    }
+
+    body.admin-page .sidebar-nav::-webkit-scrollbar-thumb {
+      background-color: #28a745 !important;
+      border-radius: 10px !important;
+      border: 2px solid #f5f5f5 !important;
+    }
+
+    body.admin-page .sidebar-nav::-webkit-scrollbar-thumb:hover {
+      background-color: #1e7e34 !important;
+    }
+    
+    body.admin-page .nav-item {
+      position: relative !important;
+      margin: 4px 8px !important;
+    }
+    
+    body.admin-page .nav-link,
+    body.admin-page .submenu-toggle {
+      display: flex !important;
+      align-items: center !important;
+      padding: 12px 16px !important;
+      text-decoration: none !important;
+      color: inherit !important;
+      border-radius: 6px !important;
+      transition: all var(--transition-speed, 0.3s) ease !important;
+      height: var(--nav-item-height, 48px) !important;
+      gap: 0.75rem !important;
+      cursor: pointer !important;
+      border: none !important;
+      background: none !important;
+      width: 100% !important;
+      text-align: left !important;
+      white-space: nowrap !important;
+    }
+    
+    body.admin-page .nav-link:hover,
+    body.admin-page .submenu-toggle:hover {
+      background-color: var(--sidebar-hover, rgba(0, 0, 0, 0.05)) !important;
+      box-shadow: inset 4px 0 0 var(--primary-color, #28a745) !important;
+    }
+    
+    body.admin-page .nav-item.active .nav-link {
+      background-color: var(--sidebar-active, rgba(0, 0, 0, 0.1)) !important;
+      border-left: 3px solid var(--primary-color, #28a745) !important;
+      font-weight: normal !important;
+      color: #333333 !important;
+    }
+    
+    /* Sidebar footer consistency */
+    body.admin-page .sidebar-footer {
+      padding: 15px !important;
+      text-align: center !important;
+      border-top: 1px solid var(--sidebar-border, #e0e0e0) !important;
+      margin-top: auto !important;
+      /* position: sticky !important; -- Removed */
+      /* bottom: 0 !important; */
+      background-color: var(--sidebar-bg, #ffffff) !important;
+      box-shadow: 0 -2px 5px rgba(0,0,0,0.05) !important;
+      z-index: 10 !important;
+      flex-shrink: 0 !important; /* Don't shrink */
+    }
+    
+    body.admin-page .logout-button {
+      width: 100% !important;
+      padding: 10px !important;
+      background-color: #dc3545 !important;
+      color: white !important;
+      border: none !important;
+      border-radius: 6px !important;
+      font-weight: normal !important;
+      cursor: pointer !important;
+      transition: background-color var(--transition-speed, 0.3s) ease !important;
+    }
+    
+    body.admin-page .logout-button:hover {
+      background-color: #c82333 !important;
+    }
+    
+    /* Main content positioning */
+    body.admin-page .main-content {
+      margin-left: var(--sidebar-width, 260px) !important;
+      min-height: 100vh !important;
+      transition: margin-left var(--transition-speed, 0.3s) cubic-bezier(0.4, 0, 0.2, 1) !important;
+      padding: 20px !important;
+      will-change: margin-left !important;
+    }
+    
+    /* Notification Badge for Sidebar */
+    body.admin-page .notification-badge {
+      position: absolute !important;
+      right: 15px !important;
+      top: 40% !important;
+      transform: translateY(-50%) !important;
+      background-color: #28a745 !important;
+      color: white !important;
+      border-radius: 50% !important;
+      min-width: 18px !important;
+      height: 18px !important;
+      font-size: 11px !important;
+      font-weight: normal !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 2px !important;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.16) !important;
+      animation: pulse-badge 2s infinite !important;
+    }
+    
+    @keyframes pulse-badge {
+      0% {
+        box-shadow: 0 3px 6px rgba(40, 167, 69, 0.3);
+        transform: translateY(-50%) scale(1);
+      }
+      50% {
+        box-shadow: 0 5px 8px rgba(40, 167, 69, 0.5);
+        transform: translateY(-50%) scale(1.1);
+      }
+      100% {
+        box-shadow: 0 3px 6px rgba(40, 167, 69, 0.3);
+        transform: translateY(-50%) scale(1);
+      }
+    }
+    
+    /* Bootstrap Icons styling for navigation */
+    body.admin-page .nav-icon.bi {
+      font-size: 1.2rem !important;
+      width: 1.2rem !important;
+      height: 1.2rem !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      flex-shrink: 0 !important;
+    }
+    
+    /* Submenu styles */
+    body.admin-page .submenu {
+      list-style: none !important;
+      padding-left: 16px !important;
+      margin-top: 4px !important;
+      max-height: 0 !important;
+      overflow: hidden !important;
+      transition: max-height var(--transition-speed, 0.3s) ease, padding var(--transition-speed, 0.3s) ease !important;
+    }
+    
+    body.admin-page .has-submenu.open .submenu {
+      max-height: 500px !important;
+      padding: 8px 0 !important;
+    }
+    
+    /* Chevron styling for submenu toggle */
+    body.admin-page .chevron {
+      margin-left: auto !important;
+      transition: transform var(--transition-speed, 0.3s) ease !important;
+      font-size: 14px !important;
+      color: var(--sidebar-text, #333333) !important;
+    }
+    
+    body.admin-page .has-submenu.open .chevron {
+      transform: rotate(360deg) !important;
+    }
+    
+    body.admin-page .submenu-link {
+      display: block !important;
+      padding: 15px 16px 10px 40px !important;
+      text-decoration: none !important;
+      color: var(--sidebar-text, #333333) !important;
+      border-radius: 6px !important;
+      font-size: 14px !important;
+      transition: all var(--transition-speed, 0.3s) ease !important;
+    }
+    
+    body.admin-page .submenu-link:hover {
+      background-color: var(--sidebar-hover, rgba(0, 0, 0, 0.05)) !important;
+      color: #333333 !important;
+      box-shadow: inset 4px 0 0 var(--primary-color, #28a745) !important;
+    }
+    
+    /* Responsive styles with high priority */
+    @media (max-width: 1024px) {
+      body.admin-page .main-content {
+        margin-left: 0 !important;
+        padding: 130px 15px 20px 15px !important;
+        width: 100% !important;
+        transition: margin-left var(--transition-speed, 0.3s) cubic-bezier(0.4, 0, 0.2, 1) !important;
+      }
+      
+      body.admin-page .sidebar {
+        transform: translateX(-100%) !important;
+        width: 280px !important;
+        z-index: 1001 !important;
+        transition: transform var(--transition-speed, 0.3s) cubic-bezier(0.4, 0, 0.2, 1) !important;
+        will-change: transform !important;
+      }
+      
+      body.admin-page .sidebar-header {
+        padding: 15px 12px !important;
+        gap: 8px !important;
+      }
+      
+      /* AFTER */     
+      body.admin-page .sidebar-nav {
+        padding: 10px 0 !important;
+        max-height: none !important;   /* ← ADD THIS */
+      }
+            
+      body.admin-page .sidebar-footer {
+        width: 100% !important;
+        padding: 12px 15px !important;
+        z-index: 1001 !important;
+      }
+      
+      body.admin-page .sidebar.open {
+        transform: translateX(0) !important;
+        box-shadow: 4px 0 15px rgba(0,0,0,0.2) !important;
+      }
+      
+      body.admin-page .hamburger {
+        display: flex !important;
+        position: fixed !important;
+        top: 25px !important;
+        left: 15px !important;
+        z-index: 1003 !important;
+        transition: all var(--transition-speed, 0.3s) cubic-bezier(0.4, 0, 0.2, 1) !important;
+      }
+    }
+        box-shadow: 4px 0 15px rgba(0,0,0,0.2) !important;
+      }
+      
+      body.admin-page .hamburger {
+        display: flex !important;
+        position: fixed !important;
+        top: 20px !important;
+        left: 20px !important;
+        z-index: 999 !important;
+        transition: all var(--transition-speed, 0.3s) cubic-bezier(0.4, 0, 0.2, 1) !important;
+        height: 44px !important;
+        width: 44px !important;
+        background: rgba(255, 255, 255, 0.98) !important;
+        border: 2px solid rgba(0, 0, 0, 0.08) !important;
+        border-radius: 12px !important;
+        padding: 10px !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      body.admin-page .submenu-item {
+        margin: 2px 0 !important;
+      }
+      
+      body.admin-page .submenu-link {
+        padding: 15px 12px 8px 30px !important;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      body.admin-page .sidebar-footer {
+        padding: 15px 10px !important;
+      }
+      
+      body.admin-page .logout-button {
+        font-size: 14px !important;
+        padding: 10px !important;
+      }
+    }
+    
+    /* Hamburger focus state */
+    body.admin-page .hamburger:focus {
+      outline: 2px solid var(--primary-color, #28a745) !important;
+    }
+    
+    /* Add 'has-notifications' class styling */
+    body.admin-page .nav-item.has-notifications .nav-link {
+      position: relative !important;
+    }
+    
+    /* Language Toggle Button Styles */
+    body.admin-page .language-toggle {
+      width: 100% !important;
+      padding: 12px 16px !important;
+      margin-bottom: 12px !important;
+      background-color: var(--sidebar-bg, #ffffff) !important;
+      border: 1px solid var(--sidebar-border, #e0e0e0) !important;
+      border-radius: 6px !important;
+      color: var(--sidebar-text, #333333) !important;
+      font-weight: normal !important;
+      cursor: pointer !important;
+      transition: all var(--transition-speed, 0.3s) ease !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 8px !important;
+      position: relative !important;
+    }
+    
+    body.admin-page .language-toggle:hover {
+      background-color: var(--sidebar-hover, rgba(0, 0, 0, 0.05)) !important;
+      border-color: var(--primary-color, #000000) !important;
+    }
+    
+    body.admin-page .language-toggle .lang-text {
+      font-size: 14px !important;
+      font-weight: normal !important;
+    }
+    
+    body.admin-page .language-toggle .toggle-indicator {
+      width: 16px !important;
+      height: 16px !important;
+      border-radius: 50% !important;
+      background-color: #28a745 !important;
+      color: white !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-size: 10px !important;
+      font-weight: bold !important;
+      transition: all var(--transition-speed, 0.3s) ease !important;
+    }
+    
+    body.admin-page .language-toggle.tamil .toggle-indicator {
+      background-color: #FF9933 !important;
+    }
+    
+    /* Switch Container Styles for Footer */
+    body.admin-page .switch-container {
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+      margin: 0 0 8px 0 !important;
+      width: 100% !important;
+    }
+    
+    body.admin-page .switch {
+      --_switch-bg-clr: #fff !important;
+      --_switch-padding: 4px !important;
+      --_slider-bg-clr: #28a745 !important;
+      --_slider-bg-clr-on: #28a745 !important;
+      --_label-padding: 0.5rem 1.2rem !important;
+      --_switch-easing: cubic-bezier(0.47, 1.64, 0.41, 0.8) !important;
+      display: grid !important;
+      grid-template-columns: 1fr 1fr !important;
+      width: 100% !important;
+      border-radius: 9999px !important;
+      position: relative !important;
+      isolation: isolate !important;
+      font-weight: 600 !important;
+      font-size: 0.85rem !important;
+      overflow: hidden !important;
+      border: 2px solid #28a745 !important;
+      cursor: pointer !important;
+      background-color: var(--_switch-bg-clr) !important;
+    }
+    
+    body.admin-page .switch input[type="checkbox"] {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border-width: 0 !important;
+    }
+    
+    body.admin-page .switch > span {
+      display: grid !important;
+      place-content: center !important;
+      padding: var(--_label-padding) !important;
+      transition: color 0.3s ease, opacity 0.3s ease !important;
+      z-index: 1 !important;
+      color: #000 !important;
+      min-width: 60px !important;
+    }
+    
+    body.admin-page .switch::before {
+      content: "" !important;
+      position: absolute !important;
+      background-color: var(--_slider-bg-clr) !important;
+      inset: var(--_switch-padding) 50% var(--_switch-padding) var(--_switch-padding) !important;
+      border-radius: inherit !important;
+      transition: inset 500ms var(--_switch-easing), background-color 500ms ease-in-out !important;
+      z-index: 0 !important;
+    }
+    
+    body.admin-page .switch::after {
+      content: "" !important;
+      position: absolute !important;
+      background-color: var(--_switch-bg-clr) !important;
+      inset: 0 !important;
+      z-index: -1 !important;
+    }
+    
+    body.admin-page .switch:has(input:checked)::before {
+      inset: var(--_switch-padding) var(--_switch-padding) var(--_switch-padding) 50% !important;
+      background-color: var(--_slider-bg-clr-on) !important;
+    }
+    
+    body.admin-page .switch > input:checked + span:first-of-type {
+      color: #000 !important;
+      opacity: 0.6 !important;
+    }
+    
+    body.admin-page .switch > input:checked ~ span:last-of-type {
+      color: #fff !important;
+      opacity: 1 !important;
+    }
+    
+    body.admin-page .switch > input:not(:checked) + span:first-of-type {
+      color: #fff !important;
+      opacity: 1 !important;
+    }
+    
+    body.admin-page .switch > input:not(:checked) ~ span:last-of-type {
+      color: #000 !important;
+      opacity: 0.6 !important;
+    }
+    
+    body.admin-page .switch:focus-within {
+      outline: 2px solid #28a745 !important;
+      outline-offset: 2px !important;
+    }
+    
+    /* For Chrome, Edge, Safari */
+    ::-webkit-scrollbar {
+      width: 12px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f5f5f5; /* Light background track */
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background-color: #28a745; /* Green scrollbar */
+      border-radius: 10px;        /* Rounded corners */
+      border: 3px solid #f5f5f5;  /* Creates padding effect */
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: #1e7e34;
+    }
+
+    /* For Firefox */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: #28a745 #f5f5f5;
+    }
+  </style>
+  <style>  /* Toast Notifications Styling */
+  .toast-container {
+    position: fixed;
+    top: 25px;
+    right: 25px;
+    z-index: 9999;
+    max-width: 350px;
+    width: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+  }
+
+  .toast {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    padding: 16px 40px 16px 24px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #28a745;
+    font-weight: 500;
+    position: relative;
+    animation: slideInRight 0.5s forwards;
+    pointer-events: auto;
+    font-family: 'Inter', sans-serif;
+    color: #000000;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    display: flex;
+    align-items: center;
+    min-width: 300px;
+    word-wrap: break-word;
+  }
+
+  .toast::before {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    margin-right: 12px;
+    background-color: #28a745;
+    flex-shrink: 0;
+  }
+
+  .toast.success {
+    border-left-color: #28a745;
+  }
+
+  .toast.info {
+    border-left-color: #17a2b8;
+  }
+
+  .toast.warning {
+    border-left-color: #ffc107;
+  }
+
+  .toast.error {
+    border-left-color: #dc3545;
+  }
+
+  @keyframes slideInRight {
+    from {
+      transform: translateX(110%);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .toast-close {
+    position: absolute;
+    /* top: 12px; */
+    right: 12px;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #000000;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    padding: 0;
+  }
+
+  .toast-close:hover {
+    opacity: 1;
+    transform: rotate(90deg);
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+
+  /* ========== TABLET RESPONSIVE STYLES (768px - 1024px) ========== */
+  @media (max-width: 1024px) and (min-width: 769px) {
+    .toast-container {
+      top: 20px;
+      right: 20px;
+      left: auto;
+      max-width: 320px;
+    }
+    
+    .toast {
+      padding: 14px 38px 14px 20px;
+      font-size: 0.9rem;
+      border-radius: 10px;
+      min-width: 280px;
+      min-height: 56px;
+    }
+    
+    .toast::before {
+      width: 14px;
+      height: 14px;
+      margin-right: 10px;
+    }
+    
+    .toast-close {
+      /* top: 10px; */
+      right: 10px;
+      font-size: 1.1rem;
+      width: 22px;
+      height: 22px;
+    }
+  }
+
+  /* ========== MOBILE RESPONSIVE STYLES (≤768px) ========== */
+  @media (max-width: 768px) {
+    .toast-container {
+      top: 15px;
+      right: 15px;
+      left: 15px;
+      max-width: none;
+      width: auto;
+    }
+    
+    .toast {
+      padding: 12px 35px 12px 16px;
+      font-size: 0.85rem;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      min-width: auto;
+      min-height: 52px;
+      word-break: break-word;
+    }
+    
+    .toast::before {
+      width: 12px;
+      height: 12px;
+      margin-right: 8px;
+    }
+    
+    .toast-close {
+      /* top: 8px; */
+      right: 8px;
+      font-size: 1rem;
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  /* ========== SMALL MOBILE RESPONSIVE STYLES (≤480px) ========== */
+  @media (max-width: 480px) {
+    .toast-container {
+      top: 10px;
+      right: 10px;
+      left: 10px;
+    }
+    
+    .toast {
+      padding: 10px 30px 10px 12px;
+      font-size: 0.8rem;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      min-height: 48px;
+    }
+    
+    .toast::before {
+      width: 10px;
+      height: 10px;
+      margin-right: 6px;
+    }
+    
+    .toast-close {
+      /* top: 6px; */
+      right: 6px;
+      font-size: 0.9rem;
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+
+  
+  /* ========== LANDSCAPE ORIENTATION ADJUSTMENTS ========== */
+  @media (max-height: 600px) and (orientation: landscape) {
+    .toast-container {
+      top: 10px;
+      max-height: calc(100vh - 20px);
+      overflow-y: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    
+    .toast-container::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .toast {
+      margin-bottom: 6px;
+      padding: 8px 28px 8px 12px;
+      font-size: 0.75rem;
+      min-height: 40px;
+    }
+    
+    .toast::before {
+      width: 8px;
+      height: 8px;
+      margin-right: 6px;
+    }
+  }
+
+  .toast.hide {
+    animation: slideOutRight 0.5s forwards;
+  }
+
+  @keyframes slideOutRight {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+
+    to {
+      transform: translateX(110%);
+      opacity: 0;
+    }
+  }
+</style>
+</head>
+
+<body class="admin-page">
+
+<div class="toast-container">
+    {% if messages %}
+    {% for message in messages %}
+    <div class="toast 
+              {% if message.tags == 'success' %}success
+              {% elif message.tags == 'info' %}info
+              {% elif message.tags == 'warning' %}warning
+              {% elif message.tags == 'error' %}error
+              {% endif %}">
+      {{ message }}
+      <button type="button" class="toast-close" aria-label="Close">&times;</button>
+    </div>
+    {% endfor %}
+    {% endif %}
+  </div>
+
+
+
+
+  <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+    <span class="hamburger-line"></span>
+    <span class="hamburger-line"></span>
+    <span class="hamburger-line"></span>
+  </button>
+  <aside class="sidebar" id="sidebar">
+    <!-- Top section -->    <div class="sidebar-header">
+      <a href="{% url 'profile' %}" class="logo-link">
+        <img src="{% static 'media/FULL.png' %}" alt="Logo" class="sidebar-logo-img" />
+      </a>
+      <h1 class="sidebar-title">Admin</h1>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+      <ul class="nav-menu">
+        <!-- Profile -->
+        <li class="nav-item">
+          <a href="{% url 'profile' %}" class="nav-link">
+            <i class="bi bi-person-circle nav-icon"></i>
+            <span class="nav-text">Profile</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="{% url 'admin_app:admin_dashboard' %}" class="nav-link">
+            <i class="bi bi-speedometer2 nav-icon"></i>
+            <span class="nav-text">Dashboard</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="{% url 'onboarding:customer_onboard_view' %}" class="nav-link">
+            <i class="bi bi-person-plus nav-icon"></i>
+            <span class="nav-text">Customer Onboarding</span>
+          </a>
+        </li>
+
+        <!-- Customers -->
+        <li class="nav-item">
+          <a href="{% url 'admin_app:admin_customer_list' %}" class="nav-link">
+            <i class="bi bi-people nav-icon"></i>
+            <span class="nav-text">Customers</span>
+          </a>
+        </li>
+
+        <!-- Place Order -->
+        <li class="nav-item">
+          <a href="{% url 'orders_app:admin_place_order' %}" class="nav-link">
+            <i class="bi bi-cart-plus nav-icon"></i>
+            <span class="nav-text">Place Order</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="{% url 'orders_app:admin_orders' %}" class="nav-link">
+            <i class="bi bi-box-seam nav-icon"></i>
+            <span class="nav-text">Orders</span>
+          </a>
+        </li>
+
+        <!-- Notifications -->
+        <li class="nav-item" id="notifications-menu-item">
+          <a href="{% url 'notifications:admin_notifications' %}" class="nav-link">
+            <i class="bi bi-bell nav-icon"></i>
+            <span class="nav-text">Notifications</span>
+            {% if unread_count > 0 %}
+            <span class="notification-badge">{{ unread_count }}</span>
+            {% endif %}
+          </a>
+        </li>
+
+        {% if request.user.role != 'customer' %}
+        <li class="nav-item">
+          <a href="{% url 'admin_app:upgrade_to_customer' %}" class="nav-link">
+            <i class="bi bi-arrow-up-circle nav-icon"></i>
+            <span class="nav-text">Become Customer</span>
+          </a>
+        </li>
+        {% endif %}
+
+        <!-- Subscription -->
+        <li class="nav-item">
+          <a href="{% url 'admin_app:admin_add_subscription' %}" class="nav-link">
+            <i class="bi bi-credit-card nav-icon"></i>
+            <span class="nav-text">Subscription</span>
+          </a>
+        </li>
+
+        <!-- Reports -->
+        <li class="nav-item">
+          <a href="{% url 'reports:admin_reports' %}" class="nav-link">
+            <i class="bi bi-graph-up nav-icon"></i>
+            <span class="nav-text">Reports</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Footer -->
+    <footer class="sidebar-footer">
+      <!-- Swap Role Toggle -->
+      <div class="switch-container" style="margin-bottom: 10px; width: 100%;">
+        <label class="switch" style="width: 100%;">
+          <input type="checkbox" id="filter" onchange="window.location.href='{% url 'swap_role' %}'"
+            {% if request.session.role == 'customer' %}checked{% endif %}>
+          <span>Admin</span>
+          <span>Customer</span>
+        </label>
+      </div>
+      
+      <!-- Language Toggle Button -->
+      <button type="button" class="language-toggle" id="language-toggle">
+        <span class="lang-text">English</span>
+        <span class="toggle-indicator">EN</span>
+      </button>
+      
+      <!-- <div class="footer-logo">Logo Here</div> -->
+      <form action="{% url 'login_app:logout' %}" method="post" class="logout-form">
+        {% csrf_token %}
+        <button type="submit" class="logout-button">Logout</button>
+      </form>
+    </footer>
+  </aside>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <main class="main-content" id="main-content">
+    {% block content %}
+    {% endblock %}
+  </main>
+   <script src="{% static 'js/admin_base.js' %}"></script>
+    <script>
+    
+    // Handle notifications indicator
+    document.addEventListener('DOMContentLoaded', function() {
+      {% if unread_count > 0 %}
+      // Add the has-notifications class to the notifications menu item
+      const notificationMenuItem = document.getElementById('notifications-menu-item');
+      if (notificationMenuItem) {
+        notificationMenuItem.classList.add('has-notifications');
+      }
+      {% endif %}
+      
+      // Check if active menu item is out of view and scroll to it
+      const activeNavItem = document.querySelector('.nav-item.active, .nav-link.active');
+      if (activeNavItem) {
+        activeNavItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      
+      // Make sure sidebar scroll works on mobile too
+      if (sidebar) {
+        // sidebar.style.overflowY = 'auto'; // Removed manual overflow
+        
+        // Set height of sidebar-nav to enable scrolling - REMOVED as CSS handles it now
+        /*
+        const sidebarHeader = document.querySelector('.sidebar-header');
+        const sidebarFooter = document.querySelector('.sidebar-footer');
+        const sidebarNav = document.querySelector('.sidebar-nav');
+        
+        if (sidebarHeader && sidebarFooter && sidebarNav) {
+          const headerHeight = sidebarHeader.offsetHeight;
+          const footerHeight = sidebarFooter.offsetHeight;
+          const windowHeight = window.innerHeight;
+          
+          sidebarNav.style.maxHeight = `${windowHeight - headerHeight - footerHeight}px`;
+        }
+        */
+      }
+    });
+    
+    // Update sidebar nav height on window resize - REMOVED
+    /*
+    window.addEventListener('resize', function() {
+      const sidebarHeader = document.querySelector('.sidebar-header');
+      const sidebarFooter = document.querySelector('.sidebar-footer');
+      const sidebarNav = document.querySelector('.sidebar-nav');
+      
+      if (sidebarHeader && sidebarFooter && sidebarNav) {
+        const headerHeight = sidebarHeader.offsetHeight;
+        const footerHeight = sidebarFooter.offsetHeight;
+        const windowHeight = window.innerHeight;
+        
+        sidebarNav.style.maxHeight = `${windowHeight - headerHeight - footerHeight}px`;
+      }
+    });
+    */
+
+    // ========== HAMBURGER SCROLL VISIBILITY FUNCTIONALITY ==========
+    let lastScrollTop = 0;
+    const scrollThreshold = 50; // Hide hamburger after scrolling 100px down
+
+    window.addEventListener('scroll', function() {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+      if (window.innerWidth <= 1024) { // Only apply on mobile/tablet
+        // Don't hide hamburger if sidebar is open
+        if (sidebar.classList.contains('open')) {
+          hamburger.style.opacity = '1';
+          hamburger.style.visibility = 'visible';
+          hamburger.style.pointerEvents = 'auto';
+          hamburger.style.transform = 'scale(1) translateY(0)';
+          return;
+        }
+
+        if (scrollTop > scrollThreshold) {
+          // Scrolling down past threshold - hide hamburger
+          hamburger.style.opacity = '0';
+          hamburger.style.visibility = 'hidden';
+          hamburger.style.pointerEvents = 'none';
+          hamburger.style.transform = 'scale(0.8) translateY(-10px)';
+        } else {
+          // At top or scrolling back up - show hamburger
+          hamburger.style.opacity = '1';
+          hamburger.style.visibility = 'visible';
+          hamburger.style.pointerEvents = 'auto';
+          hamburger.style.transform = 'scale(1) translateY(0)';
+        }
+      }
+
+      lastScrollTop = scrollTop;
+    });
+    
+    // ========== MOBILE VIEWPORT HEIGHT FIX ==========
+    // Fix for mobile browsers where address bar affects viewport height
+    function setMobileVH() {
+      if (window.innerWidth <= 1024) {
+        const vh = window.innerHeight;
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) {
+          sidebar.style.height = vh + 'px';
+          sidebar.style.maxHeight = vh + 'px';
+        }
+      }
+    }
+    
+    // Set on load
+    setMobileVH();
+    
+    // Update on resize and orientation change
+    let resizeTimer;
+    window.addEventListener('resize', function() {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(setMobileVH, 100);
+    });
+    
+    window.addEventListener('orientationchange', function() {
+      setTimeout(setMobileVH, 200);
+    });
+    
+    // Update on scroll to handle dynamic address bar
+    let scrollTimer;
+    window.addEventListener('scroll', function() {
+      if (window.innerWidth <= 1024) {
+        clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(setMobileVH, 50);
+      }
+    }, { passive: true });
+  </script>
+  <script>  document.addEventListener('DOMContentLoaded', function () {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+      toastContainer = document.createElement('div');
+      toastContainer.classList.add('toast-container');
+      document.body.appendChild(toastContainer);
+    }
+
+    // Convert Django messages to toasts
+    const messages = document.querySelectorAll('.alert');
+    messages.forEach(message => {
+      const toastType = message.classList.contains('alert-success') ? 'success' :
+        message.classList.contains('alert-info') ? 'info' :
+          message.classList.contains('alert-warning') ? 'warning' : 'error';
+
+      createToast(message.textContent.trim(), toastType);
+      message.remove();
+    });
+
+    // Initialize close functionality for existing toasts
+    initializeToastCloseButtons();
+
+    function initializeToastCloseButtons() {
+      // Handle close button for all toasts
+      const allToasts = document.querySelectorAll('.toast');
+      allToasts.forEach(toast => {
+        const closeBtn = toast.querySelector('.toast-close');
+        if (closeBtn) {
+          // Remove any existing event listeners
+          closeBtn.removeEventListener('click', closeToastHandler);
+          // Add new event listener
+          closeBtn.addEventListener('click', closeToastHandler);
+        }
+      });
+    }
+
+    function closeToastHandler(e) {
+      const toast = this.closest('.toast');
+      if (toast) {
+        toast.classList.add('hide');
+        setTimeout(() => {
+          toast.remove();
+        }, 500);
+      }
+    }
+
+    function createToast(message, type) {
+      const toast = document.createElement('div');
+      toast.classList.add('toast', type);
+      toast.innerHTML = `
+        ${message}
+        <button type="button" class="toast-close" aria-label="Close">&times;</button>
+      `;
+
+      toastContainer.appendChild(toast);
+
+      // Auto dismiss after 5 seconds
+      setTimeout(() => {
+        toast.classList.add('hide');
+        setTimeout(() => {
+          toast.remove();
+        }, 500);
+      }, 5000);
+
+      // Add close button functionality
+      const closeBtn = toast.querySelector('.toast-close');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', closeToastHandler);
+      }
+    }
+    
+    // Global toast function for easy access
+    window.showToast = function(message, type = 'success') {
+      createToast(message, type);
+    };
+    
+    // Global confirmation dialog with custom styling
+    window.showConfirm = function(message, onConfirm, onCancel) {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        animation: fadeIn 0.3s;
+      `;
+      
+      const modal = document.createElement('div');
+      modal.style.cssText = `
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        max-width: 400px;
+        width: 90%;
+        animation: slideUp 0.3s;
+      `;
+      
+      modal.innerHTML = `
+        <h3 style="margin: 0 0 15px 0; color: #333; font-size: 1.3rem;">Confirmation</h3>
+        <p style="margin: 0 0 25px 0; color: #666; line-height: 1.6;">${message}</p>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button id="confirm-cancel-btn" style="
+            padding: 10px 24px;
+            border: 1px solid #ddd;
+            background: white;
+            color: #666;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+          ">Cancel</button>
+          <button id="confirm-ok-btn" style="
+            padding: 10px 24px;
+            border: none;
+            background: #e53935;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.2s;
+          ">Confirm</button>
+        </div>
+        <style>
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+          }
+          #confirm-ok-btn:hover {
+            background: #c62828;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(229, 57, 53, 0.3);
+          }
+          #confirm-cancel-btn:hover {
+            background: #f8f9fa;
+            border-color: #adb5bd;
+          }
+        </style>
+      `;
+      
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+      
+      const removeModal = () => {
+        overlay.style.animation = 'fadeOut 0.3s';
+        setTimeout(() => overlay.remove(), 300);
+      };
+      
+      document.getElementById('confirm-ok-btn').addEventListener('click', () => {
+        removeModal();
+        if (onConfirm) onConfirm();
+      });
+      
+      document.getElementById('confirm-cancel-btn').addEventListener('click', () => {
+        removeModal();
+        if (onCancel) onCancel();
+      });
+      
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          removeModal();
+          if (onCancel) onCancel();
+        }
+      });
+    };
+  });
+</script>
+  <script>
+    // Language Toggle Functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const languageToggle = document.getElementById('language-toggle');
+      const langText = languageToggle.querySelector('.lang-text');
+      const toggleIndicator = languageToggle.querySelector('.toggle-indicator');
+      
+      let currentLanguage = 'english'; // Default language
+      
+      languageToggle.addEventListener('click', function() {
+        if (currentLanguage === 'english') {
+          // Switch to Tamil
+          langText.textContent = 'தமிழ்';
+          toggleIndicator.textContent = 'த';
+          languageToggle.classList.add('tamil');
+          currentLanguage = 'tamil';
+        } else {
+          // Switch to English
+          langText.textContent = 'English';
+          toggleIndicator.textContent = 'EN';
+          languageToggle.classList.remove('tamil');
+          currentLanguage = 'english';
+        }
+        
+        // Add visual feedback
+        languageToggle.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          languageToggle.style.transform = 'scale(1)';
+        }, 150);
+      });
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,1078 @@
+{% extends 'admin_app/admin_base.html' %}
+{% load static %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+<style>
+/* Notification Toast Styles */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.custom-toast {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 16px 20px;
+    min-width: 320px;
+    max-width: 400px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-left: 4px solid #28a745;
+    font-family: 'Inter', sans-serif;
+    animation: slideInRight 0.3s ease-out;
+    position: relative;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+}
+
+.custom-toast.hiding {
+    animation: slideOutRight 0.3s ease-out;
+}
+
+.custom-toast.toast-success {
+    border-left-color: #28a745;
+}
+
+.custom-toast.toast-error {
+    border-left-color: #dc3545;
+}
+
+.custom-toast.toast-warning {
+    border-left-color: #ffc107;
+}
+
+.custom-toast.toast-info {
+    border-left-color: #17a2b8;
+}
+
+.toast-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.toast-success .toast-icon {
+    color: #28a745;
+}
+
+.toast-error .toast-icon {
+    color: #dc3545;
+}
+
+.toast-warning .toast-icon {
+    color: #ffc107;
+}
+
+.toast-info .toast-icon {
+    color: #17a2b8;
+}
+
+.toast-content {
+    flex: 1;
+}
+
+.toast-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #2d3748;
+    margin-bottom: 4px;
+}
+
+.toast-message {
+    font-size: 0.85rem;
+    color: #718096;
+    line-height: 1.4;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    color: #718096;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.toast-close:hover {
+    background: #f1f5f9;
+    color: #2d3748;
+}
+
+/* Responsive notifications */
+@media (max-width: 768px) {
+    .toast-container {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+    }
+    
+    .custom-toast {
+        min-width: auto;
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .custom-toast {
+        padding: 12px 16px;
+        font-size: 0.9rem;
+    }
+    
+    .toast-icon {
+        font-size: 1.2rem;
+    }
+    
+    .toast-title {
+        font-size: 0.9rem;
+    }
+    
+    .toast-message {
+        font-size: 0.8rem;
+    }
+}
+
+/* Mobile and Tablet responsive styles consistent with other admin pages */
+.admin-subscription-container {
+    padding-top: 20px;
+    position: relative;
+    z-index: 1;
+}
+.header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-left: 3rem;
+    margin-top: 3rem;
+    margin-bottom: 2rem;
+}
+
+.title-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-left: -0.7rem;
+    letter-spacing: 1px;
+    color: #000000;
+    position: relative;
+    text-transform: uppercase;
+    padding-bottom: 0.6rem;
+    text-align: left;
+    line-height: 1.2;
+}
+
+.page-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 4px;
+    background-color: #28a745;
+    border-radius: 2px;
+    transition: width 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+.page-title:hover::after {
+    width: 110%;
+    transform: translateX(-50%);
+}
+
+.upgrade-subtitle {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+}
+
+/* Large Desktop (1200px+) */
+@media (min-width: 1200px) {
+    .subscription-container {
+        max-width: 1400px;
+        padding: 40px;
+    }
+    
+    .products-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 30px;
+    }
+}
+
+/* Desktop (992px - 1199px) */
+@media (max-width: 1199px) and (min-width: 992px) {
+    .subscription-container {
+        max-width: 1100px;
+        padding: 35px;
+    }
+    
+    .products-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 25px;
+    }
+}
+
+/* Large Tablet (768px - 991px) */
+@media (max-width: 991px) and (min-width: 768px) {
+    .header-bar {
+        margin-left: 1rem;
+        margin-right: 1rem;
+    }
+    
+    .subscription-container {
+        max-width: 900px;
+        padding: 25px;
+    }
+    
+    .products-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+    
+    .section-title {
+        font-size: 2rem;
+    }
+    
+    .checkout-section {
+        padding: 25px;
+    }
+}
+
+/* Tablet Portrait (481px - 767px) */
+@media (max-width: 767px) and (min-width: 481px) {
+    .header-bar {
+        margin-left: 0.5rem;
+        margin-right: 0.5rem;
+        padding-top: 85px !important;
+        text-align: center !important;
+        margin-top: 1rem;
+    }
+    
+    .title-group {
+        align-items: center;
+        text-align: center;
+    }
+    
+    .page-title {
+        font-size: 1.6rem !important;
+        margin-left: 0;
+        text-align: center;
+    }
+    
+    .page-title::after {
+        left: 50%;
+        width: 100px;
+    }
+    
+    .upgrade-subtitle {
+        text-align: center;
+        font-size: 1rem;
+    }
+    
+    .subscription-container {
+        margin: 1rem;
+        padding: 20px;
+    }
+    
+    .products-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+    
+    .product-card {
+        padding: 20px;
+    }
+    
+    .product-icon {
+        font-size: 2.5rem;
+    }
+    
+    .product-name {
+        font-size: 1.2rem;
+    }
+    
+    .product-price {
+        font-size: 1.6rem;
+    }
+    
+    .section-title {
+        font-size: 1.8rem;
+    }
+    
+    .checkout-section {
+        padding: 20px;
+    }
+    
+    .subscribe-btn {
+        padding: 14px 30px;
+        font-size: 1rem;
+    }
+}
+
+/* Mobile Landscape (321px - 480px) */
+@media (max-width: 480px) and (min-width: 321px) {
+    .header-bar {
+        margin: 0;
+        padding: 90px 10px 20px 10px !important;
+        text-align: center !important;
+    }
+    
+    .title-group {
+        align-items: center;
+        text-align: center;
+        width: 100%;
+    }
+    
+    .page-title {
+        font-size: 1.4rem !important;
+        margin-left: 0;
+        text-align: center;
+        letter-spacing: 0.5px;
+    }
+    
+    .page-title::after {
+        width: 60px;
+        height: 3px;
+    }
+    
+    .upgrade-subtitle {
+        font-size: 0.9rem;
+        text-align: center;
+    }
+    
+    .subscription-container {
+        margin: 0.5rem;
+        padding: 15px;
+        border-radius: 8px;
+    }
+    
+    .section-title {
+        font-size: 1.6rem !important;
+        margin-bottom: 10px;
+    }
+    
+    .section-subtitle {
+        font-size: 1rem;
+        margin-bottom: 30px;
+    }
+    
+    .products-grid {
+        grid-template-columns: 1fr !important;
+        gap: 15px;
+    }
+    
+    .product-card {
+        padding: 18px;
+        margin-bottom: 10px;
+    }
+    
+    .product-icon {
+        font-size: 2.2rem;
+        margin-bottom: 15px;
+    }
+    
+    .product-name {
+        font-size: 1.1rem;
+        margin-bottom: 8px;
+    }
+    
+    .product-description {
+        font-size: 0.9rem;
+        margin-bottom: 15px;
+    }
+    
+    .product-price {
+        font-size: 1.5rem;
+        margin-bottom: 12px;
+    }
+    
+    .product-status {
+        font-size: 0.8rem;
+        padding: 6px 12px;
+    }
+    
+    .checkout-section {
+        padding: 18px;
+        margin-top: 30px;
+    }
+    
+    .selected-products h3 {
+        font-size: 1.1rem;
+    }
+    
+    .selected-list {
+        gap: 8px;
+    }
+    
+    .selected-item {
+        font-size: 0.8rem;
+        padding: 6px 12px;
+    }
+    
+    .total-price {
+        font-size: 1.8rem;
+    }
+    
+    .total-duration {
+        font-size: 1rem;
+        margin-bottom: 25px;
+    }
+    
+    .subscribe-btn {
+        padding: 12px 25px;
+        font-size: 0.9rem;
+        width: 100%;
+        max-width: 250px;
+    }
+    
+    .no-selection-message {
+        font-size: 0.9rem;
+    }
+}
+
+/* Small Mobile (up to 320px) */
+@media (max-width: 320px) {
+    .header-bar {
+        margin: 0;
+        padding: 35px 10px 20px 10px !important;
+        text-align: center !important;
+    }
+    
+    .page-title {
+        font-size: 1.2rem !important;
+        letter-spacing: 0.3px;
+    }
+    
+    .page-title::after {
+        width: 50px;
+        height: 2px;
+    }
+    
+    .upgrade-subtitle {
+        font-size: 0.8rem;
+    }
+    
+    .subscription-container {
+        margin: 0.25rem;
+        padding: 12px;
+    }
+    
+    .section-title {
+        font-size: 1.4rem !important;
+    }
+    
+    .section-subtitle {
+        font-size: 0.9rem;
+    }
+    
+    .product-card {
+        padding: 15px;
+    }
+    
+    .product-icon {
+        font-size: 2rem;
+    }
+    
+    .product-name {
+        font-size: 1rem;
+    }
+    
+    .product-description {
+        font-size: 0.85rem;
+    }
+    
+    .product-price {
+        font-size: 1.3rem;
+    }
+    
+    .checkout-section {
+        padding: 15px;
+    }
+    
+    .total-price {
+        font-size: 1.6rem;
+    }
+    
+    .subscribe-btn {
+        padding: 10px 20px;
+        font-size: 0.85rem;
+        width: 100%;
+    }
+}
+/* Admin-consistent styling with enhanced responsiveness */
+.subscription-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.section-title {
+    text-align: center;
+    color: #2d3748;
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+    font-family: 'Inter', sans-serif;
+    text-decoration: none;
+    border-bottom: none;
+    line-height: 1.2;
+}
+
+.section-subtitle {
+    text-align: center;
+    color: #718096;
+    font-size: 1.1rem;
+    margin-bottom: 40px;
+    font-family: 'Inter', sans-serif;
+    line-height: 1.4;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+    width: 100%;
+}
+
+/* Enhanced touch targets for mobile */
+@media (max-width: 768px) {
+    .products-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .products-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+}
+
+.product-card {
+    background: #ffffff;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 25px;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+}
+
+.product-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #28a745, #1e7e34);
+    transition: left 0.3s ease;
+}
+
+.product-card:hover::before,
+.product-card.selected::before {
+    left: 0;
+}
+
+.product-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(40, 167, 69, 0.12);
+    border-color: #28a745;
+}
+
+.product-card.selected {
+    border-color: #28a745;
+    background: #f8f9fa;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(40, 167, 69, 0.18);
+}
+
+.product-card.has-access {
+    border-color: #28a745;
+    background: #f0fdf4;
+}
+
+.product-card.has-access::before {
+    background: linear-gradient(90deg, #28a745, #218838);
+}
+
+.product-icon {
+    font-size: 2.8rem;
+    margin-bottom: 18px;
+    color: #28a745;
+}
+
+.product-card.selected .product-icon,
+.product-card.has-access .product-icon {
+    color: #28a745;
+}
+
+.product-name {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 10px;
+    font-family: 'Inter', sans-serif;
+}
+
+.product-description {
+    color: #718096;
+    font-size: 0.95rem;
+    margin-bottom: 20px;
+    line-height: 1.5;
+    font-family: 'Inter', sans-serif;
+}
+
+.product-price {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #28a745;
+    margin-bottom: 15px;
+    font-family: 'Inter', sans-serif;
+}
+
+.product-status {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: 'Inter', sans-serif;
+}
+
+.status-active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-expired {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.status-not-subscribed {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.product-checkbox {
+    display: none;
+}
+
+.checkout-section {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 30px;
+    margin-top: 40px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+}
+
+.selected-products {
+    margin-bottom: 25px;
+}
+
+.selected-products h3 {
+    color: #2d3748;
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+    font-family: 'Inter', sans-serif;
+}
+
+.selected-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+/* Responsive selected list */
+@media (max-width: 768px) {
+    .selected-list {
+        gap: 8px;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .selected-list {
+        gap: 6px;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .selected-item {
+        margin-bottom: 5px;
+        width: auto;
+        text-align: center;
+    }
+}
+
+.selected-item {
+    background: #28a745;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+}
+
+.total-section {
+    border-top: 2px solid #e2e8f0;
+    padding-top: 25px;
+    margin-top: 25px;
+}
+
+.total-price {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 10px;
+    font-family: 'Inter', sans-serif;
+}
+
+.total-duration {
+    color: #718096;
+    font-size: 1.1rem;
+    margin-bottom: 30px;
+    font-family: 'Inter', sans-serif;
+}
+
+.subscribe-btn {
+    background: linear-gradient(135deg, #28a745, #1e7e34);
+    color: white;
+    border: none;
+    padding: 16px 40px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+        font-family: 'Inter', sans-serif;
+}
+
+.subscribe-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(40, 167, 69, 0.3);
+}
+
+.subscribe-btn:disabled {
+    background: #a0aec0;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.no-selection-message {
+    color: #718096;
+    font-style: italic;
+    margin-bottom: 20px;
+    font-family: 'Inter', sans-serif;
+}
+</style>
+<div class="header-bar d-flex align-items-center justify-content-between flex-wrap mb-3">
+        <div class="title-group">
+            <h1 class="page-title mb-0 me-3" ><i class="icon-arrow-up"></i>Product Subscription</h1>
+            <p class="upgrade-subtitle" >Choose your products and manage your subscriptions
+            </p>
+        </div>
+    </div>
+<div class="admin-subscription-container">
+
+    <div class="subscription-container">
+        <h3 class="section-title" style="text-align:center; ">Choose Your Products</h3>
+        <p class="section-subtitle">Select the products you want access to. Each product costs ₹100 per month.</p>
+
+        <form id="subscription-form" method="POST">
+            {% csrf_token %}
+            <div class="products-grid">
+                <!-- Rice Product -->
+                <div class="product-card {% if current_access.rice %}has-access{% endif %}" 
+                     onclick="toggleProduct('rice')" 
+                     data-product="rice" 
+                     data-price="100">
+                    <input type="checkbox" name="products" value="rice" class="product-checkbox" id="rice-checkbox">
+                    <div class="product-icon">
+                        <i class="fas fa-seedling"></i>
+                    </div>
+                    <h3 class="product-name">Rice Orders</h3>
+                    <p class="product-description">Create and manage rice orders for your customers</p>
+                    <div class="product-price">₹100<span style="font-size: 0.6em; color: #718096;">/month</span></div>
+                    {% if current_access.rice %}
+                        <span class="product-status status-active">Currently Active</span>
+                    {% else %}
+                        <span class="product-status status-not-subscribed">Not Subscribed</span>
+                    {% endif %}
+                </div>
+
+                <!-- Paddy Product -->
+                <div class="product-card {% if current_access.paddy %}has-access{% endif %}" 
+                     onclick="toggleProduct('paddy')" 
+                     data-product="paddy" 
+                     data-price="100">
+                    <input type="checkbox" name="products" value="paddy" class="product-checkbox" id="paddy-checkbox">
+                    <div class="product-icon">
+                        <i class="fas fa-leaf"></i>
+                    </div>
+                    <h3 class="product-name">Paddy Orders</h3>
+                    <p class="product-description">Create and manage paddy orders for your customers</p>
+                    <div class="product-price">₹100<span style="font-size: 0.6em; color: #718096;">/month</span></div>
+                    {% if current_access.paddy %}
+                        <span class="product-status status-active">Currently Active</span>
+                    {% else %}
+                        <span class="product-status status-not-subscribed">Not Subscribed</span>
+                    {% endif %}
+                </div>
+
+                <!-- Pesticide Product -->
+                <div class="product-card {% if current_access.pesticide %}has-access{% endif %}" 
+                     onclick="toggleProduct('pesticide')" 
+                     data-product="pesticide" 
+                     data-price="100">
+                    <input type="checkbox" name="products" value="pesticide" class="product-checkbox" id="pesticide-checkbox">
+                    <div class="product-icon">
+                        <i class="fas fa-flask"></i>
+                    </div>
+                    <h3 class="product-name">Pesticide Orders</h3>
+                    <p class="product-description">Create and manage pesticide/fertilizer orders for your customers</p>
+                    <div class="product-price">₹100<span style="font-size: 0.6em; color: #718096;">/month</span></div>
+                    {% if current_access.pesticide %}
+                        <span class="product-status status-active">Currently Active</span>
+                    {% else %}
+                        <span class="product-status status-not-subscribed">Not Subscribed</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="checkout-section">
+                <div class="selected-products">
+                    <h3>Selected Products:</h3>
+                    <div class="selected-list" id="selected-list">
+                        <p class="no-selection-message">No products selected</p>
+                    </div>
+                </div>
+
+                <div class="total-section">
+                    <div class="total-price" id="total-price">₹0</div>
+                    <div class="total-duration">per month</div>
+                    <button type="submit" class="subscribe-btn" id="subscribe-btn" disabled>
+                        <i class="fas fa-credit-card"></i> Subscribe Now
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let selectedProducts = [];
+        const productPrices = { rice: 100, paddy: 100, pesticide: 100 };
+        const productNames = { rice: 'Rice Orders', paddy: 'Paddy Orders', pesticide: 'Pesticide Orders' };
+
+        function toggleProduct(productName) {
+            const checkbox = document.getElementById(productName + '-checkbox');
+            const card = document.querySelector(`[data-product="${productName}"]`);
+            
+            checkbox.checked = !checkbox.checked;
+            
+            if (checkbox.checked) {
+                card.classList.add('selected');
+                if (!selectedProducts.includes(productName)) {
+                    selectedProducts.push(productName);
+                }
+            } else {
+                card.classList.remove('selected');
+                selectedProducts = selectedProducts.filter(p => p !== productName);
+            }
+            
+            updateCheckoutSection();
+        }
+
+        function updateCheckoutSection() {
+            const selectedList = document.getElementById('selected-list');
+            const totalPrice = document.getElementById('total-price');
+            const subscribeBtn = document.getElementById('subscribe-btn');
+
+            if (selectedProducts.length === 0) {
+                selectedList.innerHTML = '<p class="no-selection-message">No products selected</p>';
+                totalPrice.textContent = '₹0';
+                subscribeBtn.disabled = true;
+            } else {
+                const selectedItems = selectedProducts.map(product => 
+                    `<span class="selected-item">${productNames[product]}</span>`
+                ).join('');
+                
+                selectedList.innerHTML = selectedItems;
+                
+                const total = selectedProducts.reduce((sum, product) => sum + productPrices[product], 0);
+                totalPrice.textContent = `₹${total}`;
+                subscribeBtn.disabled = false;
+            }
+        }
+
+        // Form submission
+        document.getElementById('subscription-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (selectedProducts.length === 0) {
+                showToast('Please select at least one product.', 'warning');
+                return;
+            }
+
+            // Submit form with selected products
+            this.submit();
+        });
+
+        // Initialize
+        updateCheckoutSection();
+    </script>
+</div>
+
+<!-- Toast Notification Container -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- Django Messages as Notifications -->
+{% if messages %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        {% for message in messages %}
+            showNotification(
+                '{{ message.tags|default:"info" }}',
+                '{% if message.tags == "success" %}Success!{% elif message.tags == "error" %}Error!{% elif message.tags == "warning" %}Warning!{% else %}Info{% endif %}',
+                '{{ message|escapejs }}'
+            );
+        {% endfor %}
+    });
+</script>
+{% endif %}
+
+<script>
+    // Notification System
+    function showNotification(type, title, message, duration = 5000) {
+        const container = document.getElementById('toast-container');
+        
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = `custom-toast toast-${type}`;
+        
+        // Icon based on type
+        let icon = 'fa-info-circle';
+        if (type === 'success') icon = 'fa-check-circle';
+        else if (type === 'error') icon = 'fa-exclamation-circle';
+        else if (type === 'warning') icon = 'fa-exclamation-triangle';
+        
+        toast.innerHTML = `
+            <div class="toast-icon">
+                <i class="fas ${icon}"></i>
+            </div>
+            <div class="toast-content">
+                <div class="toast-title">${title}</div>
+                <div class="toast-message">${message}</div>
+            </div>
+            <button class="toast-close" onclick="closeToast(this)">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        container.appendChild(toast);
+        
+        // Auto remove after duration
+        setTimeout(() => {
+            closeToast(toast.querySelector('.toast-close'));
+        }, duration);
+    }
+    
+    function closeToast(button) {
+        const toast = button.closest('.custom-toast');
+        toast.classList.add('hiding');
+        setTimeout(() => {
+            toast.remove();
+        }, 300);
+    }
+    
+    // // Test Notifications (remove these in production)
+    // // Uncomment the lines below to test notifications
+    
+    // setTimeout(() => {
+    //     showNotification('success', 'Subscription Activated!', 'Your Rice Orders subscription has been successfully activated. You can now create rice orders for your customers.');
+    // }, 1000);
+    
+    // setTimeout(() => {
+    //     showNotification('info', 'Payment Processing', 'Your payment of ₹300 is being processed. You will receive a confirmation email shortly.');
+    // }, 2000);
+    
+    // setTimeout(() => {
+    //     showNotification('warning', 'Subscription Expiring Soon', 'Your Paddy Orders subscription will expire in 3 days. Renew now to avoid service interruption.');
+    // }, 3000);
+    
+    // setTimeout(() => {
+    //     showNotification('error', 'Payment Failed', 'Unable to process your payment. Please check your payment method and try again.');
+    // }, 4000);
+    
+</script>
+
+{% endblock content %}

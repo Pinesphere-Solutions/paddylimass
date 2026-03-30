@@ -1,0 +1,394 @@
+{% extends "customer_app/customer_base.html" %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Admin-consistent styling matching admin_product_subscription */
+  .admin-upgrade-container {
+    padding-top: 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .container-fluid {
+    min-height: 100vh !important;
+    background-color: #ffffff !important;
+  }
+
+  .header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-left: 0.5rem;
+    margin-top: -1rem;
+    margin-bottom: 2rem;
+  }
+
+  .title-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: 1px;
+    color: #000000;
+    position: relative;
+    text-transform: uppercase;
+    padding-bottom: 0.6rem;
+    text-align: left;
+    line-height: 1.2;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .page-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 4px;
+    background-color: #28a745;
+    border-radius: 2px;
+    transition: width 0.3s ease-in-out, transform 0.3s ease-in-out;
+  }
+
+  .page-title:hover::after {
+    width: 110%;
+    transform: translateX(-50%);
+  }
+
+  .upgrade-subtitle {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+    line-height: 1.4;
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* Responsive breakpoints matching admin_product_subscription */
+  @media (max-width: 991px) and (min-width: 768px) {
+    .header-bar {
+      margin-left: 1rem;
+      margin-right: 1rem;
+    }
+    
+    .upgrade-form {
+      max-width: 900px;
+      padding: 25px;
+    }
+  }
+
+  @media (max-width: 767px) and (min-width: 481px) {
+    .header-bar {
+      margin-left: 0.5rem;
+      margin-right: 0.5rem;
+      padding-top: 85px !important;
+      text-align: center !important;
+      margin-top: 1rem;
+    }
+    
+    .title-group {
+      align-items: center;
+      text-align: center;
+    }
+    
+    .page-title {
+      font-size: 1.6rem !important;
+      margin-left: 0;
+      text-align: center;
+    }
+    
+    .page-title::after {
+      left: 50%;
+      width: 100px;
+    }
+    
+    .upgrade-subtitle {
+      text-align: center;
+      font-size: 1rem;
+    }
+    
+    .upgrade-form {
+      margin: 1rem;
+      padding: 20px;
+    }
+  }
+
+  @media (max-width: 480px) and (min-width: 321px) {
+    .header-bar {
+      margin: 0;
+      padding: 90px 10px 20px 10px !important;
+      text-align: center !important;
+    }
+    
+    .title-group {
+      align-items: center;
+      text-align: center;
+      width: 100%;
+    }
+    
+    .page-title {
+      font-size: 1.4rem !important;
+      margin-left: 0;
+      text-align: center;
+      letter-spacing: 0.5px;
+    }
+    
+    .page-title::after {
+      width: 60px;
+      height: 3px;
+    }
+    
+    .upgrade-subtitle {
+      font-size: 0.9rem;
+      text-align: center;
+    }
+    
+    .upgrade-form {
+      margin: 0.5rem;
+      padding: 15px;
+      border-radius: 8px;
+    }
+  }
+
+  @media (max-width: 320px) {
+    .header-bar {
+      margin: 0;
+      padding: 35px 10px 20px 10px !important;
+      text-align: center !important;
+    }
+    
+    .page-title {
+      font-size: 1.2rem !important;
+      letter-spacing: 0.3px;
+    }
+    
+    .page-title::after {
+      width: 50px;
+      height: 2px;
+    }
+    
+    .upgrade-subtitle {
+      font-size: 0.8rem;
+    }
+    
+    .upgrade-form {
+      margin: 0.25rem;
+      padding: 12px;
+    }
+  }
+
+  /* Upgrade form container */
+  .upgrade-form {
+    max-width: 800px;
+    margin: 2rem auto;
+    background: white;
+    border-radius: 12px;
+    padding: 40px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* Admin status styling */
+  .admin-status {
+    text-align: center;
+  }
+
+  .admin-icon {
+    margin: 0 auto 1.5rem;
+    width: 80px;
+    height: 80px;
+    background: #e6f7ed;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #22c55e;
+    border: 2px solid #22c55e;
+  }
+
+  .admin-icon.upgrade-icon {
+    background: #f8f9fa;
+    color: #28a745;
+    border: 2px solid #28a745;
+  }
+
+  .admin-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: #2d3748;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .admin-info-box {
+    background: #f8f9fa;
+    border-left: 4px solid #28a745;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    text-align: left;
+    font-family: 'Inter', sans-serif;
+    color: #4a5568;
+  }
+
+  .admin-info-box.success {
+    border-left-color: #22c55e;
+    background: #e6f7ed;
+  }
+
+  .admin-info-box strong {
+    color: #2d3748;
+    font-weight: 600;
+  }
+
+  .form-text {
+    font-size: 0.95rem;
+    color: #718096;
+    line-height: 1.6;
+    font-family: 'Inter', sans-serif;
+    margin-bottom: 2rem;
+  }
+
+  /* Button styling */
+  .upgrade-btn,
+  .admin-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #28a745, #218838);
+    color: white;
+    border: none;
+    padding: 16px 40px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    font-family: 'Inter', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    text-decoration: none;
+    margin-top: 10px;
+  }
+
+  .upgrade-btn:hover:not(:disabled),
+  .admin-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(40, 167, 69, 0.4);
+    text-decoration: none;
+    color: white;
+  }
+
+  .upgrade-btn:disabled,
+  .admin-btn:disabled {
+    background: #a0aec0;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .upgrade-btn:active,
+  .admin-btn:active {
+    transform: translateY(0);
+  }
+
+  /* Admin status styling */
+  .admin-status {
+    text-align: center;
+  }
+
+  .admin-icon {
+    margin: 0 auto 1.5rem;
+    width: 80px;
+    height: 80px;
+    background: #e6f7ed;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #22c55e;
+    border: 2px solid #22c55e;
+  }
+
+  .admin-icon.upgrade-icon {
+    background: #f8f9fa;
+    color: #28a745;
+    border: 2px solid #28a745;
+  }
+
+</style>
+
+<div class="container-fluid my-4">
+  <div class="header-bar d-flex align-items-center justify-content-between flex-wrap mb-3">
+    <h1 class="page-title mb-0 me-3">Upgrade To Admin</h1>
+  </div>
+
+  <div class="upgrade-form">
+    {% if request.session.role == 'admin' or is_admin %}
+      <!-- Already Admin Message -->
+      <div class="admin-status">
+        <div class="admin-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="48" height="48" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M8 12l2 2 6-6"></path>
+          </svg>
+        </div>
+        <h2 class="admin-title">You are already an Admin</h2>
+        <div class="admin-info-box success">
+          <p><strong>You are already an admin!</strong> Your account doesn't need to be upgraded.</p>
+        </div>
+        <p class="form-text">
+          As an existing administrator, you already have access to all administrative features including product management, order tracking, and system configuration.
+        </p>
+      </div>
+    {% else %}
+      <!-- Upgrade Form -->
+      <div class="admin-status">
+        <div class="admin-icon upgrade-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="48" height="48" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 15l-6-6-6 6"></path>
+            <line x1="12" y1="9" x2="12" y2="21"></line>
+            <rect x="4" y="3" width="16" height="4" rx="1" ry="1"></rect>
+          </svg>
+        </div>
+        <h3 class="admin-title">Upgrade to Admin</h3>
+
+        <div class="admin-info-box">
+          <p><strong>Unlock admin privileges</strong> and take control of your store with powerful tools and insights.</p>
+        </div>
+
+        <p class="form-text">
+          By upgrading, you’ll gain access to the admin dashboard, product management, order analytics, and much more. It's a one-time subscription to empower your business.
+        </p>
+
+        <form action="{% url 'customer_app:upgrade_to_admin' %}" method="post">{% csrf_token %}
+          <button type="submit" class="upgrade-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 15l-6-6-6 6"></path>
+              <line x1="12" y1="9" x2="12" y2="21"></line>
+              <rect x="4" y="3" width="16" height="4" rx="1" ry="1"></rect>
+            </svg>
+            <span>Upgrade Now</span>
+          </button>
+        </form>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

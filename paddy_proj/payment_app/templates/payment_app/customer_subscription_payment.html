@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Complete Payment</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            min-width: 100vw;
+            width: 100vw;
+            height: 100vh;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100vw;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            background: transparent;
+        }
+
+        .main-content {
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 2px solid #28a745;
+            padding: 2.5rem 2rem;
+            margin: 2rem 0;
+        }
+
+        .header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: 1px;
+            color: #000000;
+            position: relative;
+            text-transform: uppercase;
+            padding-bottom: 0.6rem;
+            text-align: left;
+            line-height: 1.2;
+        }
+
+        .page-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 80px;
+            height: 4px;
+            background-color: #28a745;
+            border-radius: 2px;
+            transition: width 0.3s ease-in-out;
+        }
+
+        .page-title:hover::after {
+            width: 120px;
+        }
+
+        .logout-btn {
+            background: #dc3545!important;
+            color: #fff!important;
+            border: none;
+            border-radius: 8px;
+            padding: 0.6rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
+        }
+
+        .logout-btn:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(220, 53, 69, 0.3);
+            color: #fff;
+        }
+
+        h2 {
+            color: #2d3748;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            font-size: 1.5rem;
+        }
+
+        .plan-select-group {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+            flex-wrap: wrap;
+        }
+
+        .plan-card {
+            background: white;
+            color: #2d3748;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 2rem 2.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            position: relative;
+            min-width: 200px;
+            text-align: center;
+            font-size: 1.15rem;
+            font-weight: 600;
+            outline: none;
+        }
+
+        .plan-card:hover {
+            border-color: #28a745;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .plan-card.selected {
+            border-color: #28a745;
+            background: #28a745;
+            color: #ffffff;
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
+        }
+
+        .plan-radio {
+            display: none;
+        }
+
+        .plan-check {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid #e2e8f0;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: #000000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .plan-card.selected .plan-check {
+            opacity: 1;
+            background: #ffffff;
+            color: #28a745;
+            border-color: #ffffff;
+        }
+
+        .plan-price {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: inherit;
+            margin-top: 0.5rem;
+            margin-bottom: 0.2rem;
+            letter-spacing: 1px;
+        }
+
+        .plan-duration {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: inherit;
+            opacity: 0.8;
+        }
+
+        .payment-btn {
+            width: 100%;
+            padding: 1.1rem 0;
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 1.5rem;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+        }
+
+        .payment-btn:disabled {
+            background: #cbd5e0;
+            color: #718096;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .payment-btn:hover:enabled {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(40, 167, 69, 0.3);
+        }
+
+        .payment-btn:active:enabled {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 767px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .main-content {
+                max-width: 100%;
+                padding: 2rem 1.5rem;
+                border-radius: 8px;
+            }
+
+            .page-title {
+                font-size: 1.6rem;
+                text-align: center;
+            }
+
+            .page-title::after {
+                left: 50%;
+                transform: translateX(-50%);
+            }
+
+            .header-bar {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .plan-select-group {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+
+            .plan-card {
+                min-width: 100%;
+                padding: 1.5rem 1rem;
+            }
+
+            h2 {
+                font-size: 1.3rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 1.5rem 1rem;
+            }
+
+            .page-title {
+                font-size: 1.4rem;
+            }
+
+            .plan-card {
+                padding: 1.2rem 0.8rem;
+                font-size: 1rem;
+            }
+
+            .plan-price {
+                font-size: 1.8rem;
+            }
+
+            .payment-btn {
+                padding: 1rem;
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 320px) {
+            .page-title {
+                font-size: 1.2rem;
+            }
+
+            .page-title::after {
+                width: 50px;
+                height: 3px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="main-content">
+        <div class="header-bar d-flex align-items-center justify-content-between flex-wrap mb-3">
+            <h1 class="page-title mb-0 me-3">Subscription Payment</h1>
+            <form action="{% url 'login_app:logout' %}" method="post" style="display: inline-block;">
+                {% csrf_token %}
+                <button type="submit" class="logout-btn" style="background: none; border: none; color: inherit; text-decoration: none; cursor: pointer;">Logout</button>
+            </form>
+        </div>
+        <div class="text-center">
+            <h2 class="mb-4">Choose a Subscription Plan</h2>
+            <form method="POST" id="plan-form">
+                {% csrf_token %}
+                <div class="plan-select-group">
+                    <label class="plan-card" id="plan-1-label" tabindex="0">
+                        <input type="radio" name="plan" value="1month" class="plan-radio" id="plan-1">
+                        <div class="plan-duration">1 Month</div>
+                        <div class="plan-price">₹100</div>
+                        <span class="plan-check"><svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M13.485 3.929a1 1 0 0 1 0 1.414l-6.364 6.364a1 1 0 0 1-1.414 0l-2.121-2.121a1 1 0 1 1 1.414-1.414l1.414 1.414 5.657-5.657a1 1 0 0 1 1.414 0z"/></svg></span>
+                    </label>
+                    <label class="plan-card" id="plan-2-label" tabindex="0">
+                        <input type="radio" name="plan" value="2months" class="plan-radio" id="plan-2">
+                        <div class="plan-duration">2 Months</div>
+                        <div class="plan-price">₹180</div>
+                        <span class="plan-check"><svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M13.485 3.929a1 1 0 0 1 0 1.414l-6.364 6.364a1 1 0 0 1-1.414 0l-2.121-2.121a1 1 0 1 1 1.414-1.414l1.414 1.414 5.657-5.657a1 1 0 0 1 1.414 0z"/></svg></span>
+                    </label>
+                </div>
+                <button type="submit" class="payment-btn" id="pay-btn" disabled>
+                    <i class="fas fa-lock me-2"></i>Pay Now Securely
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- Toast Notifications -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055;">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="toast align-items-center text-white border-0 mb-2 show" role="alert" aria-live="assertive" aria-atomic="true" 
+                 style="background-color: 
+                     {% if message.tags == 'error' %}#dc3545{% elif message.tags == 'warning' %}#ffc107{% elif message.tags == 'success' %}#28a745{% else %}#17a2b8{% endif %};">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="fas 
+                            {% if message.tags == 'error' %}fa-exclamation-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% elif message.tags == 'success' %}fa-check-circle{% else %}fa-info-circle{% endif %} 
+                            me-2"></i>
+                        {{ message }}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+    // Plan selection UI logic
+    const planRadios = document.querySelectorAll('.plan-radio');
+    const planCards = document.querySelectorAll('.plan-card');
+    const payBtn = document.getElementById('pay-btn');
+    let selectedPlan = null;
+    planRadios.forEach((radio, idx) => {
+        radio.addEventListener('change', function() {
+            planCards.forEach(card => card.classList.remove('selected'));
+            if (radio.checked) {
+                planCards[idx].classList.add('selected');
+                payBtn.disabled = false;
+                selectedPlan = radio.value;
+            }
+        });
+    });
+    // Keyboard accessibility for cards
+    planCards.forEach((card, idx) => {
+        card.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                planRadios[idx].checked = true;
+                planRadios[idx].dispatchEvent(new Event('change'));
+            }
+        });
+    });
+    // Enable button if already selected (for back nav)
+    document.addEventListener('DOMContentLoaded', function() {
+        planRadios.forEach((radio, idx) => {
+            if (radio.checked) {
+                planCards[idx].classList.add('selected');
+                payBtn.disabled = false;
+                selectedPlan = radio.value;
+            }
+        });
+    });
+</script>
+
+<script>
+    // Razorpay payment integration (dynamic order creation)
+    document.getElementById('plan-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const selectedPlan = document.querySelector('.plan-radio:checked');
+        if (!selectedPlan) {
+            showToast('Please select a plan.', 'warning');
+            return;
+        }
+        const planValue = selectedPlan.value;
+        const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+        // Disable button to prevent double submit
+        const payBtn = document.getElementById('pay-btn');
+        payBtn.disabled = true;
+        fetch(window.location.href, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ plan: planValue })
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('Failed to create order.');
+            return res.json();
+        })
+        .then(data => {
+            if (!data.order_id || !data.amount || !data.key_id) {
+                throw new Error('Invalid order details from server.');
+            }
+            const options = {
+                key: data.key_id,
+                amount: data.amount,
+                currency: 'INR',
+                name: 'Paddy Management System',
+                description: 'Customer Subscription',
+                order_id: data.order_id,
+                handler: function (response) {
+                    fetch(data.success_url,{
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_signature: response.razorpay_signature
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(result => {
+                        if (result.success) {
+                            showToast('Payment successful! Redirecting...', 'success');
+                            setTimeout(() => {
+                                window.location.href = data.redirect_url;
+                            }, 1500);
+                        } else {
+                            showToast('Payment failed. Please try again.', 'error');
+                            payBtn.disabled = false;
+                        }
+                    })
+                    .catch(() => {
+                        showToast('Payment verification failed.', 'error');
+                        payBtn.disabled = false;
+                    });
+                },
+                theme: { color: '#28a745' }
+            };
+            const rzp = new Razorpay(options);
+            rzp.open();
+            payBtn.disabled = false;
+        })
+        .catch(err => {
+            showToast(err.message || 'Could not initiate payment.', 'error');
+            payBtn.disabled = false;
+        });
+    });
+</script>
+
+<!-- Toast Auto-dismiss Script -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var toasts = document.querySelectorAll('.toast');
+        toasts.forEach(function(toast) {
+            // Auto dismiss after 5 seconds
+            setTimeout(function() {
+                var bsToast = new bootstrap.Toast(toast);
+                bsToast.hide();
+            }, 5000);
+        });
+    });
+</script>
+
+<!-- Razorpay order details for JS (populated by backend on POST) -->
+{% if order_id and amount and key_id %}
+<script id="razorpay-script-data" type="application/json">{"order_id": "{{ order_id }}", "amount": "{{ amount }}", "key_id": "{{ key_id }}"}</script>
+{% endif %}
+
+</body>
+</html>

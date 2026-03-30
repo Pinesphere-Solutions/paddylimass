@@ -1,0 +1,1407 @@
+{% extends 'superadmin_app/superadmin_base.html' %}
+{% load static %}
+{% block content %}
+
+<head>
+    <link rel="stylesheet" href="{% static 'paddy_app/css/place_order.css' %}">    
+    <style>
+        /* Disable all page load animations */
+        * {
+            animation: none !important;
+            transition: none !important;
+            transform: none !important;
+        }
+        
+        /* Re-enable only necessary transitions for user interactions */
+        button:hover, .tab-button:hover, .remove-row-btn:hover, 
+        .add-item-btn:hover, .submit-btn:hover {
+            transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease !important;
+        }
+        
+        /* Fix: Allow hamburger button animations to work */
+        .hamburger, .hamburger *, .hamburger-line {
+            animation: unset !important;
+            transition: all 0.3s ease !important;
+            transform: unset !important;
+        }
+        
+        .hamburger.active .hamburger-line:nth-child(1) {
+            transform: translateY(8px) rotate(45deg) !important;
+        }
+        
+        .hamburger.active .hamburger-line:nth-child(2) {
+            opacity: 0 !important;
+            transition: opacity 0.3s ease !important;
+        }
+        
+        .hamburger.active .hamburger-line:nth-child(3) {
+            transform: translateY(-8px) rotate(-45deg) !important;
+        }
+        
+        @media (max-width: 1024px) {
+            .hamburger.active .hamburger-line:nth-child(3) {
+                transform: translateY(-13px) rotate(-45deg) !important;
+            }
+        }
+        
+        /* Allow sidebar transitions */
+        .sidebar, #sidebar {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            transform: translateX(0) !important;
+        }
+        
+        .sidebar.open, #sidebar.open {
+            transform: translateX(0) !important;
+        }
+        
+        @media (max-width: 1024px) {
+            .sidebar, #sidebar {
+                transform: translateX(-100%) !important;
+            }
+            
+            .sidebar.open, #sidebar.open {
+                transform: translateX(0) !important;
+            }
+        }
+        
+        @media (max-width:768px) {
+            .form-container {
+                padding: 10px;
+            }
+            .form-card {
+                padding: 15px;
+            }
+            .form-row {
+                flex-direction: column;
+            }
+            .form-group {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            .tab-header {
+                flex-direction: column;
+                margin-top: 10vh;
+            }
+            .tab-button {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+            
+        }
+    </style>
+        <!-- Add styles for button states -->
+    <style>
+        /* Add some visual feedback for disabled buttons */
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        button.ready {
+            background-color: #28a745;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.2);
+        }
+        
+        /* Style for required fields */
+        input:required, select:required {
+            border-left: 3px solid #28a745;
+        }
+        
+        input:required:invalid, select:required:invalid {
+            border-left: 3px solid #ff6b6b;
+        }
+
+        /* Table styling for order items */
+        .items-section {
+            overflow-x: auto;
+            width: 100%;
+            margin: 1rem 0;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+        }
+
+        .items-table thead {
+            background-color: #f5f5f5;
+        }
+
+        .items-table th, .items-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .items-table th {
+            font-weight: 600;
+            background-color: #f9f9f9;
+        }
+
+        .items-table input[type="text"],
+        .items-table input[type="number"],
+        .items-table input[type="date"] {
+            width: 100%;
+            min-width: 60px;
+            padding: 6px;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .items-table input:focus {
+            outline: none;
+            border-color: #28a745;
+            box-shadow: 0 0 4px rgba(40, 167, 69, 0.3);
+        }
+
+        .items-table input:invalid {
+            /* border: 2px solid #e53935 !important; */
+            border-left: 3px solid #e53935 !important;
+            box-shadow: 0 0 4px rgba(229, 57, 53, 0.3);
+        }
+
+        .items-table input:invalid:focus {
+            /* border: 2px solid #e53935 !important; */
+            border-left: 3px solid #e53935 !important;
+            box-shadow: 0 0 6px rgba(229, 57, 53, 0.5);
+        }
+
+        .remove-row-btn {
+            background: none;
+            border: none;
+            color: #e53935;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            transition: transform 0.2s;
+        }
+
+        .remove-row-btn:hover {
+            transform: scale(1.2);
+        }
+
+        .items-table tfoot {
+            background-color: #f9f9f9;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .items-table {
+                font-size: 0.85rem;
+            }
+
+            .items-table th, .items-table td {
+                padding: 6px;
+            }
+
+            .items-table input[type="text"],
+            .items-table input[type="number"],
+            .items-table input[type="date"] {
+                font-size: 0.8rem;
+                padding: 4px;
+            }
+        }
+        .add-item-btn {
+            background: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 0.5rem 1.2rem;
+            font-size: 1rem;
+            transition: background 0.2s, box-shadow 0.2s;
+            margin-right: 0.5rem;
+        }
+        .add-item-btn:hover:not(:disabled) {
+            background: #218838;
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
+        }
+        .submit-btn, .form-actions button {
+            background: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.15);
+        }
+        .submit-btn:hover:not(:disabled), .form-actions button:hover:not(:disabled) {
+            background: #218838;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.25);
+        }
+        .submit-btn.ready, .form-actions button.ready {
+            background: #1e7e34;
+            color: #fff;
+        }
+        #pesticide-save-btn {
+            background: #2196F3;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 0.5rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 8px rgba(33,150,243,0.07);
+            margin-right: 0.5rem;
+        }
+        #pesticide-save-btn:hover:not(:disabled) {
+            background: #1565c0;
+            box-shadow: 0 4px 12px rgba(33,150,243,0.13);
+        }
+        .remove-row-btn {
+            background: #dc3545;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 0.3rem 1rem;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+        }
+        .remove-row-btn:hover:not(:disabled) {
+            background: #c82333;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.2);
+        }
+        .order-placed-success {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #28a745;
+            color: #fff;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            z-index: 9999;
+            box-shadow: 0 4px 16px rgba(40, 167, 69, 0.25);
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        
+        /* Phone search dropdown styles */
+        .phone-search-wrapper {
+            position: relative;
+        }
+        
+        .customer-search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #28a745;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: none;
+        }
+        
+        .customer-search-results.active {
+            display: block;
+        }
+        
+        .customer-result-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s;
+        }
+        
+        .customer-result-item:last-child {
+            border-bottom: none;
+        }
+        
+        .customer-result-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .customer-result-item .customer-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        
+        .customer-result-item .customer-phone {
+            color: #28a745;
+            font-size: 0.9em;
+        }
+        
+        .customer-result-item .customer-company {
+            color: #666;
+            font-size: 0.85em;
+            margin-top: 2px;
+        }
+        
+        .no-results-message {
+            padding: 15px;
+            text-align: center;
+            color: #999;
+        }
+        
+        /* Custom customer select dropdown */
+        .custom-select-wrapper {
+            position: relative;
+        }
+        
+        .custom-select-trigger {
+            width: 100%;
+            padding: 12px 40px 12px 14px;
+            border: 2px solid #d0d0d0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-size: 15px;
+            color: #333;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .custom-select-trigger:hover {
+            border-color: #28a745;
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.1);
+        }
+        
+        .custom-select-trigger.active {
+            border-color: #28a745;
+            box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.1);
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .custom-select-trigger .placeholder {
+            color: #999;
+        }
+        
+        .custom-select-arrow {
+            width: 20px;
+            height: 20px;
+            stroke: #28a745;
+            transition: transform 0.3s ease;
+        }
+        
+        .custom-select-trigger.active .custom-select-arrow {
+            transform: rotate(180deg);
+        }
+        
+        .custom-select-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #28a745;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: none;
+        }
+        
+        .custom-select-dropdown.active {
+            display: block;
+        }
+        
+        .custom-select-search {
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 1;
+        }
+        
+        .custom-select-search input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d0d0d0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .custom-select-search input:focus {
+            outline: none;
+            border-color: #28a745;
+        }
+        
+        .custom-select-option {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s;
+        }
+        
+        .custom-select-option:last-child {
+            border-bottom: none;
+        }
+        
+        .custom-select-option:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .custom-select-option.selected {
+            background-color: #e8f5e9;
+            color: #28a745;
+            font-weight: 600;
+        }
+        
+        .custom-select-option .option-name {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .custom-select-option .option-id {
+            color: #999;
+            font-size: 0.85em;
+            margin-top: 2px;
+        }
+        
+        /* Hide original select */
+        select[id*="customer-select"] {
+            display: none;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class="header-bar d-flex align-items-center justify-content-between flex-wrap mb-3">
+        <h1 class="page-title mb-0 me-3 " >Place New Order</h1>
+    </div>
+    <!-- Tab Buttons -->
+    <div class="tab-header">
+        <button class="tab-button active "  type="button" onclick="showForm('Rice')">Rice</button>
+        <button class="tab-button "  type="button" onclick="showForm('Paddy')">Paddy</button>
+        <button class="tab-button "  type="button" onclick="showForm('Pesticide')">Pesticide</button>
+    </div>
+    <div class="form-container">
+        <!-- RICE FORM -->
+        <div id="rice-form" class="form-card">
+            <h3 >Customer Details <span title="Fill customer information">ⓘ</span></h3>
+            <hr>
+            <form method="POST" id="rice-order-form" class="order-form">
+                {% csrf_token %}
+                <input type="hidden" name="form_token" value="{{ request.session.session_key }}_rice_{{ now|date:'U' }}">
+                <input type="hidden" name="product_category_id" value="1">
+                <div class="form-row">
+                    <div class="form-group phone-search-wrapper">
+                        <label for="phone-search-rice">Search by Phone Number</label>
+                        <input type="tel" id="phone-search-rice" placeholder="Type phone number to search..." maxlength="10">
+                        <div id="search-results-rice" class="customer-search-results"></div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="customer-select-rice">First Name</label>
+                        <select name="customer" id="customer-select-rice" required>
+                            <option value="" disabled selected>Select a customer</option>
+                            {% for customer in customers %}
+                            <option value="{{ customer.customer_id }}" data-last-name="{{ customer.last_name }}">{{ customer.first_name }} {{ customer.last_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="customer-last-name-rice">Last Name</label>
+                        <input type="text" id="customer-last-name-rice" readonly>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="driver_name">Driver Name*</label>
+                        <input type="text" name="driver_name" id="driver_name" placeholder="Driver full name" required pattern="[A-Za-z\s]+" minlength="2">
+                    </div>
+                    <div class="form-group">
+                        <label>Vehicle Number*</label>
+                        <input type="text" name="vehicle_number" placeholder="e.g., TN23AB4567" required pattern="[A-Z]{2}[0-9]{2}[A-Z]{1,2}[0-9]{4}">
+                    </div>
+                </div>
+                <label for="driver_ph_no">Driver Phone No*</label>
+                <input type="tel" name="driver_ph_no" id="driver_ph_no" placeholder="9876543210" required pattern="[0-9]{10}" maxlength="10">
+                <h3>Order Details <span title="Fill order details">ⓘ</span></h3>
+                <hr>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="category-rice">Category</label>
+                        <input type="text" name="category" id="category-rice" placeholder="Enter rice category" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="quantity">Quantity</label>
+                        <input type="number" name="quantity" placeholder="Enter quantity" required min="1" step="0.01">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="price_per_unit">Price per Unit</label>
+                        <input type="number" name="price_per_unit" placeholder="Enter price" required min="0" step="0.01">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="delivery_date">Delivery Date</label>
+                        <input type="date" name="delivery_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="rice-total">Total Amount</label>
+                        <input type="number" id="rice-total" name="display_total" placeholder="0.00" step="0.01" readonly>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" id="rice-submit-btn">Place Rice Order</button>
+                </div>
+            </form>
+        </div>
+        <!-- PADDY FORM -->
+        <div style="display: none;" id="paddy-form" class="form-card">
+            <h3 >Customer Details <span title="Fill customer information">ⓘ</span></h3>
+            <hr>
+            <form method="POST" id="paddy-order-form" class="order-form">
+                {% csrf_token %}
+                <input type="hidden" name="form_token" value="{{ request.session.session_key }}_paddy_{{ now|date:'U' }}">
+                <input type="hidden" name="product_category_id" value="2">
+                <div class="form-row">
+                    <div class="form-group phone-search-wrapper">
+                        <label for="phone-search-paddy">Search by Phone Number</label>
+                        <input type="tel" id="phone-search-paddy" placeholder="Type phone number to search..." maxlength="10">
+                        <div id="search-results-paddy" class="customer-search-results"></div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="customer-select-paddy">First Name</label>
+                        <select name="customer" id="customer-select-paddy" required>
+                            <option value="" disabled selected>Select a customer</option>
+                            {% for customer in customers %}
+                            <option value="{{ customer.customer_id }}" data-last-name="{{ customer.last_name }}">{{ customer.first_name }} {{ customer.last_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="customer-last-name-paddy">Last Name</label>
+                        <input type="text" id="customer-last-name-paddy" readonly>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="driver_name">Driver Name*</label>
+                        <input type="text" name="driver_name" placeholder="Driver full name" required pattern="[A-Za-z\s]+" minlength="2">
+                    </div>
+                    <div class="form-group">
+                        <label>Vehicle Number*</label>
+                        <input type="text" name="vehicle_number" placeholder="e.g., TN23AB4567" required pattern="[A-Z]{2}[0-9]{2}[A-Z]{1,2}[0-9]{4}">
+                    </div>
+                </div>
+                <label for="driver_ph_no">Driver Phone No*</label>
+                <input type="tel" name="driver_ph_no" placeholder="9876543210" required pattern="[0-9]{10}" maxlength="10">
+                <h3>Order Details <span title="Fill order details">ⓘ</span></h3>
+                <hr>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="category-rice">Category</label>
+                        <input type="text" name="category" id="category-rice" placeholder="Enter paddy category" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="quantity">Quantity</label>
+                        <input type="number" name="quantity" placeholder="Enter quantity" required min="1" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="price_per_unit">Price per Unit</label>
+                        <input type="number" name="price_per_unit" placeholder="Enter price" required min="0" step="0.01">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="delivery_date">Delivery Date</label>
+                        <input type="date" name="delivery_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="paddy-total">Total Amount</label>
+                        <input type="number" id="paddy-total" name="display_total" placeholder="0.00" step="0.01" readonly>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" id="paddy-submit-btn">Place Paddy Order</button>
+                </div>
+            </form>
+        </div>
+        <!-- PESTICIDE FORM -->
+        <div style="display: none;" id="pesticide-form" class="form-card">
+            <h3 >Customer Details <span title="Fill customer information">ⓘ</span></h3>
+            <hr>
+            <form method="POST" id="pesticide-order-form" class="order-form">
+                {% csrf_token %}
+                <input type="hidden" name="form_token" value="{{ request.session.session_key }}_pesticide_{{ now|date:'U' }}">
+                <input type="hidden" name="product_category_id" value="3">
+                <div class="form-row">
+                    <div class="form-group phone-search-wrapper">
+                        <label for="phone-search-pesticide">Search by Phone Number</label>
+                        <input type="tel" id="phone-search-pesticide" placeholder="Type phone number to search..." maxlength="10">
+                        <div id="search-results-pesticide" class="customer-search-results"></div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="customer-select-pesticide">First Name</label>
+                        <select name="customer" id="customer-select-pesticide" required>
+                            <option value="" disabled selected>Select a customer</option>
+                            {% for customer in customers %}
+                            <option value="{{ customer.customer_id }}" data-last-name="{{ customer.last_name }}">{{ customer.first_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="customer-last-name-pesticide">Last Name</label>
+                        <input type="text" id="customer-last-name-pesticide" readonly>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="driver_name">Driver Name*</label>
+                        <input type="text" name="driver_name" placeholder="Driver full name" required pattern="[A-Za-z\s]+" minlength="2">
+                    </div>
+                    <div class="form-group">
+                        <label>Vehicle Number*</label>
+                        <input type="text" name="vehicle_number" placeholder="e.g., TN23AB4567" required pattern="[A-Z]{2}[0-9]{2}[A-Z]{1,2}[0-9]{4}">
+                    </div>
+                </div>
+                <label for="driver_ph_no">Driver Phone No*</label>
+                <input type="tel" name="driver_ph_no" placeholder="9876543210" required pattern="[0-9]{10}" maxlength="10">
+                <h3>Order Details <span title="Fill order details">ⓘ</span></h3>
+                <hr>
+                <h3>Order Items</h3>
+                <div class="items-section">
+                    <table id="pesticide-items-table" class="items-table">
+                        <thead>
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Batch</th>
+                                <th>Expiry Date</th>
+                                <th>Quantity</th>
+                                <th>Rate</th>
+                                <th>Per</th>
+                                <th>Amount</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                            <tbody id="pesticide-items-container">
+                                    <tr class="item-row">
+                                        <td><input type="text" name="product_name[]" class="product-name" required></td>
+                                        <td><input type="text" name="batch_number[]" class="batch-number" required></td>
+                                        <td><input type="date" name="expiry_date[]" class="expiry-date" required></td>
+                                        <td><input type="number" name="quantity[]" class="quantity" step="0.01" min="0.01" required onchange="calculateRowTotal(this)"></td>
+                                        <td><input type="number" name="price_per_unit[]" class="price" step="0.01" min="0" required onchange="calculateRowTotal(this)"></td>
+                                        <td>
+                                            <input type="text" name="unit[]" class="unit" placeholder="e.g., 100 ml" required>
+                                        </td>
+                                        <td><input type="number" name="total_amount[]" class="row-total" step="0.01" readonly></td>
+                                        <td><button type="button" class="remove-row-btn" onclick="removeRow(this)" title="Remove Item">✕</button></td>
+                                    </tr>
+                                </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="6" style="text-align: right;"><strong>Total:</strong></td>
+                                <td><input type="number" id="pesticide-grand-total" name="grand_total" step="0.01" readonly></td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="form-row" style="margin-top: 1rem;">
+                    <div class="form-group">
+                        <label for="delivery_date_pesticide">Delivery Date</label>
+                        <input type="date" name="delivery_date" id="delivery_date_pesticide" required>
+                    </div>
+                </div>
+                <div class="form-row" style="display: flex; align-items: center; gap: 1rem; margin-top: 1rem;">
+                    <button type="button" id="pesticide-add-item-btn" class="add-item-btn" onclick="addPesticideRow()">+ Add Item</button>
+                    <!-- <button type="button" id="pesticide-save-btn" class="submit-btn" style="background:#2196F3;" onclick="savePesticideOrderDraft()" disabled>Save Order</button> -->
+                    <button type="submit" id="pesticide-submit-btn" class="submit-btn">Place Pesticide Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function addNewRow() {
+            const tableBody = document.getElementById("items-container");
+            const newRow = document.createElement("tr");
+            newRow.classList.add("item-row");
+        
+            newRow.innerHTML = `
+                <td><input type="text" name="product_name[]" class="product-name" required></td>
+                <td><input type="text" name="batch_number[]" class="batch-number" required></td>
+                <td><input type="date" name="expiry_date[]" class="expiry-date" required></td>
+                <td><input type="number" name="quantity[]" class="quantity" step="0.01" required onchange="calculateRowTotal(this)"></td>
+                <td><input type="number" name="price_per_unit[]" class="price" step="0.01" required onchange="calculateRowTotal(this)"></td>
+                <td>
+                    <select name="unit[]" class="unit">
+                        <option value="Nos">Nos</option>
+                        <option value="Kg">Kg</option>
+                        <option value="Ltr">Ltr</option>
+                    </select>
+                </td>
+                <td><input type="number" name="total_amount[]" class="row-total" step="0.01" readonly></td>
+                <td><button type="button" class="remove-row-btn" onclick="removeRow(this)" title="Remove Item">✕</button></td>
+            `;
+        
+            tableBody.appendChild(newRow);
+        }
+        
+        function removeRow(button) {
+            const row = button.closest("tr");
+            if (row) {
+                row.remove();
+                updateGrandTotal();
+            }
+        }
+        
+        function calculateRowTotal(input) {
+            const row = input.closest("tr");
+            const quantity = parseFloat(row.querySelector(".quantity")?.value || 0);
+            const price = parseFloat(row.querySelector(".price")?.value || 0);
+            const total = (quantity * price).toFixed(2);
+        
+            row.querySelector(".row-total").value = total;
+            updateGrandTotal();
+        }
+        
+        function updateGrandTotal() {
+            let grandTotal = 0;
+            document.querySelectorAll(".row-total").forEach(input => {
+                grandTotal += parseFloat(input.value) || 0;
+            });
+            document.getElementById("grand-total").value = grandTotal.toFixed(2);
+        }
+    </script>
+
+    <!-- Order submission script -->
+    <script>
+        // Direct form submission for order creation
+        function submitOrderForm(formId, categoryId) {
+            const form = document.getElementById(formId);
+            
+            // Validate form before submission
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return false;
+            }
+            
+            // Submit the form directly - backend will handle order creation and redirect to payment
+            form.submit();
+        }
+
+        // Remove preventDefault and let forms submit naturally
+        document.addEventListener('DOMContentLoaded', function() {
+            const riceForm = document.getElementById('rice-order-form');
+            const paddyForm = document.getElementById('paddy-order-form');
+            const pesticideForm = document.getElementById('pesticide-order-form');
+            
+            // No preventDefault needed - forms will submit naturally
+            if (riceForm) {
+                riceForm.addEventListener('submit', function(e) {
+                    // Just validate - no preventDefault
+                    const form = e.target;
+                    if (!form.checkValidity()) {
+                        e.preventDefault();
+                        form.reportValidity();
+                    }
+                });
+            }
+            if (paddyForm) {
+                paddyForm.addEventListener('submit', function(e) {
+                    // Just validate - no preventDefault
+                    const form = e.target;
+                    if (!form.checkValidity()) {
+                        e.preventDefault();
+                        form.reportValidity();
+                    }
+                });
+            }
+            if (pesticideForm) {
+                pesticideForm.addEventListener('submit', function(e) {
+                    // Just validate - no preventDefault
+                    const form = e.target;
+                    if (!form.checkValidity()) {
+                        e.preventDefault();
+                        form.reportValidity();
+                    }
+                });
+            }
+        });
+
+    </script>
+
+    <!-- Tab Switch Script -->
+    <script>
+        function showForm(formType) {
+            const forms = {
+                'Rice': 'rice-form',
+                'Paddy': 'paddy-form',
+                'Pesticide': 'pesticide-form'
+            };
+
+            for (let type in forms) {
+                document.getElementById(forms[type]).style.display = (type === formType) ? 'block' : 'none';
+            }
+
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.tab-button[onclick="showForm('${formType}')"]`).classList.add('active');
+        }
+        // Show only the first form on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            showForm('Rice');
+        });
+    </script>
+
+    <!-- Customer last name script for all forms -->
+    <script>
+        function setupCustomerListeners(selectId, inputId) {
+            const select = document.getElementById(selectId);
+            const input = document.getElementById(inputId);
+            if (select && input) {
+                select.addEventListener("change", function () {
+                    const selectedOption = this.options[this.selectedIndex];
+                    const lastName = selectedOption.getAttribute("data-last-name");
+                    input.value = lastName || "";
+                });
+            }
+        }
+
+        setupCustomerListeners("customer-select-rice", "customer-last-name-rice");
+        setupCustomerListeners("customer-select-paddy", "customer-last-name-paddy");
+        setupCustomerListeners("customer-select-pesticide", "customer-last-name-pesticide");
+    </script>
+
+    <script>
+        // Phone Number Search and Customer Autofill - Live Search
+        let searchTimeout = null;
+        
+        function setupPhoneSearch(phoneInputId, resultsContainerId, selectId, lastNameInputId) {
+            const phoneInput = document.getElementById(phoneInputId);
+            const resultsContainer = document.getElementById(resultsContainerId);
+            
+            if (!phoneInput || !resultsContainer) return;
+            
+            // Search as user types
+            phoneInput.addEventListener('input', function() {
+                const phone = this.value.trim();
+                
+                // Clear previous timeout
+                if (searchTimeout) {
+                    clearTimeout(searchTimeout);
+                }
+                
+                // Hide results if input is empty
+                if (!phone) {
+                    resultsContainer.classList.remove('active');
+                    resultsContainer.innerHTML = '';
+                    return;
+                }
+                
+                // Debounce the search
+                searchTimeout = setTimeout(async () => {
+                    try {
+                        const response = await fetch(`{% url 'orders_app:get_customer_by_phone' %}?phone_number=${phone}`);
+                        const data = await response.json();
+                        
+                        if (data.success && data.customers && data.customers.length > 0) {
+                            displaySearchResults(data.customers, resultsContainer, selectId, lastNameInputId, phoneInputId);
+                        } else {
+                            resultsContainer.innerHTML = '<div class="no-results-message">No customers found</div>';
+                            resultsContainer.classList.add('active');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        resultsContainer.innerHTML = '<div class="no-results-message">Error searching customers</div>';
+                        resultsContainer.classList.add('active');
+                    }
+                }, 300); // Wait 300ms after user stops typing
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!phoneInput.contains(e.target) && !resultsContainer.contains(e.target)) {
+                    resultsContainer.classList.remove('active');
+                }
+            });
+        }
+        
+        function displaySearchResults(customers, resultsContainer, selectId, lastNameInputId, phoneInputId) {
+            let html = '';
+            
+            customers.forEach(customer => {
+                html += `
+                    <div class="customer-result-item" onclick="selectCustomer('${customer.customer_id}', '${selectId}', '${lastNameInputId}', '${phoneInputId}')">
+                        <div class="customer-name">${customer.first_name} ${customer.last_name}</div>
+                        <div class="customer-phone">${customer.phone_number}</div>
+                        ${customer.company_name ? `<div class="customer-company">${customer.company_name}</div>` : ''}
+                    </div>
+                `;
+            });
+            
+            resultsContainer.innerHTML = html;
+            resultsContainer.classList.add('active');
+        }
+        
+        function selectCustomer(customerId, selectId, lastNameInputId, phoneInputId) {
+            // Set the select dropdown value
+            const select = document.getElementById(selectId);
+            select.value = customerId;
+            
+            // Get the selected option to retrieve last name
+            const selectedOption = select.options[select.selectedIndex];
+            const lastName = selectedOption.getAttribute('data-last-name');
+            
+            // Update last name field
+            const lastNameInput = document.getElementById(lastNameInputId);
+            if (lastNameInput) {
+                lastNameInput.value = lastName;
+            }
+            
+            // Trigger change event
+            select.dispatchEvent(new Event('change'));
+            
+            // Hide results and clear search input
+            const phoneInput = document.getElementById(phoneInputId);
+            const resultsContainer = phoneInput.nextElementSibling;
+            resultsContainer.classList.remove('active');
+            phoneInput.value = '';
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup phone search for all forms
+            setupPhoneSearch('phone-search-rice', 'search-results-rice', 'customer-select-rice', 'customer-last-name-rice');
+            setupPhoneSearch('phone-search-paddy', 'search-results-paddy', 'customer-select-paddy', 'customer-last-name-paddy');
+            setupPhoneSearch('phone-search-pesticide', 'search-results-pesticide', 'customer-select-pesticide', 'customer-last-name-pesticide');
+            
+            // Initialize custom select dropdowns
+            initCustomSelect('customer-select-rice', 'customer-last-name-rice');
+            initCustomSelect('customer-select-paddy', 'customer-last-name-paddy');
+            initCustomSelect('customer-select-pesticide', 'customer-last-name-pesticide');
+        });
+        
+        // Custom Select Dropdown Implementation
+        function initCustomSelect(selectId, lastNameInputId) {
+            const selectElement = document.getElementById(selectId);
+            if (!selectElement) return;
+            
+            // Create custom dropdown structure
+            const wrapper = document.createElement('div');
+            wrapper.className = 'custom-select-wrapper';
+            
+            const trigger = document.createElement('div');
+            trigger.className = 'custom-select-trigger';
+            trigger.innerHTML = `
+                <span class="selected-text placeholder">Select a customer</span>
+                <svg class="custom-select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            `;
+            
+            const dropdown = document.createElement('div');
+            dropdown.className = 'custom-select-dropdown';
+            
+            // Add search input
+            const searchWrapper = document.createElement('div');
+            searchWrapper.className = 'custom-select-search';
+            searchWrapper.innerHTML = '<input type="text" placeholder="Search customers..." />';
+            dropdown.appendChild(searchWrapper);
+            
+            const searchInput = searchWrapper.querySelector('input');
+            
+            // Add options
+            const optionsContainer = document.createElement('div');
+            const options = selectElement.querySelectorAll('option');
+            
+            options.forEach((option, index) => {
+                if (option.value === '') return; // Skip placeholder option
+                
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'custom-select-option';
+                optionDiv.dataset.value = option.value;
+                optionDiv.dataset.lastName = option.getAttribute('data-last-name') || '';
+                optionDiv.innerHTML = `
+                    <div class="option-name">${option.textContent}</div>
+                    <div class="option-id">ID: ${option.value}</div>
+                `;
+                
+                optionDiv.addEventListener('click', function() {
+                    selectOption(selectElement, trigger, dropdown, this, lastNameInputId);
+                });
+                
+                optionsContainer.appendChild(optionDiv);
+            });
+            
+            dropdown.appendChild(optionsContainer);
+            
+            // Insert custom dropdown before select element
+            selectElement.parentNode.insertBefore(wrapper, selectElement);
+            wrapper.appendChild(trigger);
+            wrapper.appendChild(dropdown);
+            
+            // Toggle dropdown
+            trigger.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const isActive = dropdown.classList.contains('active');
+                
+                // Close all other dropdowns
+                document.querySelectorAll('.custom-select-dropdown').forEach(d => {
+                    d.classList.remove('active');
+                    d.previousElementSibling.classList.remove('active');
+                });
+                
+                if (!isActive) {
+                    dropdown.classList.add('active');
+                    trigger.classList.add('active');
+                    searchInput.focus();
+                }
+            });
+            
+            // Search functionality
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const options = optionsContainer.querySelectorAll('.custom-select-option');
+                
+                options.forEach(option => {
+                    const text = option.textContent.toLowerCase();
+                    if (text.includes(searchTerm)) {
+                        option.style.display = 'block';
+                    } else {
+                        option.style.display = 'none';
+                    }
+                });
+            });
+            
+            // Prevent search input from closing dropdown
+            searchInput.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!wrapper.contains(e.target)) {
+                    dropdown.classList.remove('active');
+                    trigger.classList.remove('active');
+                }
+            });
+        }
+        
+        function selectOption(selectElement, trigger, dropdown, optionDiv, lastNameInputId) {
+            // Update hidden select
+            selectElement.value = optionDiv.dataset.value;
+            selectElement.dispatchEvent(new Event('change'));
+            
+            // Update trigger text
+            const selectedText = trigger.querySelector('.selected-text');
+            selectedText.textContent = optionDiv.querySelector('.option-name').textContent;
+            selectedText.classList.remove('placeholder');
+            
+            // Update last name field
+            const lastNameInput = document.getElementById(lastNameInputId);
+            if (lastNameInput) {
+                lastNameInput.value = optionDiv.dataset.lastName;
+            }
+            
+            // Mark as selected
+            dropdown.querySelectorAll('.custom-select-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            optionDiv.classList.add('selected');
+            
+            // Close dropdown
+            dropdown.classList.remove('active');
+            trigger.classList.remove('active');
+        }
+    </script>
+
+    <script>
+        // Calculate total (quantity * price) for single-item forms (Rice / Paddy)
+        function calculateSingleOrderTotal(formId, totalInputId) {
+            const form = document.getElementById(formId);
+            if (!form) return;
+            const qty = parseFloat(form.querySelector('input[name="quantity"]')?.value || 0);
+            const price = parseFloat(form.querySelector('input[name="price_per_unit"]')?.value || 0);
+            const total = (qty * price) || 0;
+            const totalInput = document.getElementById(totalInputId);
+            if (totalInput) totalInput.value = total.toFixed(2);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const riceForm = document.getElementById('rice-order-form');
+            if (riceForm) {
+                const q = riceForm.querySelector('input[name="quantity"]');
+                const p = riceForm.querySelector('input[name="price_per_unit"]');
+                q?.addEventListener('input', () => calculateSingleOrderTotal('rice-order-form', 'rice-total'));
+                p?.addEventListener('input', () => calculateSingleOrderTotal('rice-order-form', 'rice-total'));
+                // Initialize if backend provided values
+                calculateSingleOrderTotal('rice-order-form', 'rice-total');
+            }
+
+            const paddyForm = document.getElementById('paddy-order-form');
+            if (paddyForm) {
+                const q = paddyForm.querySelector('input[name="quantity"]');
+                const p = paddyForm.querySelector('input[name="price_per_unit"]');
+                q?.addEventListener('input', () => calculateSingleOrderTotal('paddy-order-form', 'paddy-total'));
+                p?.addEventListener('input', () => calculateSingleOrderTotal('paddy-order-form', 'paddy-total'));
+                calculateSingleOrderTotal('paddy-order-form', 'paddy-total');
+            }
+        });
+    </script>
+    <script>
+        // Replace the existing addNewRow, removeRow, calculateRowTotal, and updateGrandTotal functions with these:
+
+            // Replace the existing addPesticideRow function with this one
+            function addPesticideRow() {
+                const tableBody = document.getElementById("pesticide-items-container");
+                const newRow = document.createElement("tr");
+                newRow.classList.add("item-row");
+            
+                newRow.innerHTML = `
+                    <td><input type="text" name="product_name[]" class="product-name" required></td>
+                    <td><input type="text" name="batch_number[]" class="batch-number" required></td>
+                    <td><input type="date" name="expiry_date[]" class="expiry-date" required></td>
+                    <td><input type="number" name="quantity[]" class="quantity" step="0.01" min="0.01" required onchange="calculateRowTotal(this)"></td>
+                    <td><input type="number" name="price_per_unit[]" class="price" step="0.01" min="0" required onchange="calculateRowTotal(this)"></td>
+                    <td>
+                        <input type="text" name="unit[]" class="unit" placeholder="e.g., 100 ml, 20 gm" required>
+                    </td>
+                    <td><input type="number" name="total_amount[]" class="row-total" step="0.01" readonly></td>
+                    <td><button type="button" class="remove-row-btn" onclick="removeRow(this)" title="Remove Item">✕</button></td>
+                `;
+                
+                tableBody.appendChild(newRow);
+                
+                // Initialize the row total
+                const quantityInput = newRow.querySelector(".quantity");
+                if (quantityInput) {
+                    calculateRowTotal(quantityInput);
+                }
+            }
+
+            function removeRow(button) {
+                const row = button.closest("tr");
+                if (row) {
+                    row.remove();
+                    updateGrandTotal();
+                }
+            }
+
+            function calculateRowTotal(input) {
+                const row = input.closest("tr");
+                const quantity = parseFloat(row.querySelector(".quantity")?.value || 0);
+                const price = parseFloat(row.querySelector(".price")?.value || 0);
+                const total = (quantity * price).toFixed(2);
+
+                row.querySelector(".row-total").value = total;
+                updateGrandTotal();
+            }
+
+            function updateGrandTotal() {
+                // Find which form is currently visible
+                let formId = "";
+                if (document.getElementById("paddy-form").style.display === "block") {
+                    formId = "paddy";
+                } else if (document.getElementById("pesticide-form").style.display === "block") {
+                    formId = "pesticide";
+                } else {
+                    return; // Not on a form with items
+                }
+
+                // Calculate grand total for the visible form
+                let grandTotal = 0;
+                const itemsContainer = document.getElementById(`${formId}-items-container`);
+                if (itemsContainer) {
+                    itemsContainer.querySelectorAll(".row-total").forEach(input => {
+                        grandTotal += parseFloat(input.value) || 0;
+                    });
+
+                    const grandTotalInput = document.getElementById(`${formId}-grand-total`);
+                    if (grandTotalInput) {
+                        grandTotalInput.value = grandTotal.toFixed(2);
+                    }
+
+                }
+            }
+            // Initialize all rows when the page loads
+            document.addEventListener('DOMContentLoaded', function() {
+                // Add event listeners to tab buttons to ensure calculations are updated when switching tabs
+                document.querySelectorAll('.tab-button').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        // Give the DOM time to update before recalculating
+                        setTimeout(updateGrandTotal, 100);
+                    });
+                });
+
+                // Initialize any existing rows
+                document.querySelectorAll('.quantity').forEach(input => {
+                    calculateRowTotal(input);
+                });
+            });
+    </script>
+
+    <script>
+        // Form validation function to enable/disable submit buttons
+        function validateCurrentForm() {
+            // Get the currently visible form
+            let formId = "";
+            let formElement = null;
+            let submitBtn = null;
+            
+            if (document.getElementById("rice-form").style.display === "block" || 
+                document.getElementById("rice-form").style.display === "") {
+                formId = "rice";
+                formElement = document.querySelector("#rice-form form");
+                submitBtn = document.querySelector("#rice-form button[onclick*='submitOrderForm']");
+            } else if (document.getElementById("paddy-form").style.display === "block") {
+                formId = "paddy";
+                formElement = document.querySelector("#paddy-form form");
+                submitBtn = document.querySelector("#paddy-form button[onclick*='submitOrderForm']");
+            } else if (document.getElementById("pesticide-form").style.display === "block") {
+                formId = "pesticide";
+                formElement = document.querySelector("#pesticide-form form");
+                submitBtn = document.querySelector("#pesticide-form button[onclick*='submitOrderForm']");
+            }
+            
+            if (!formElement || !submitBtn) return;
+            
+            // Check if all required fields are filled
+            const requiredFields = formElement.querySelectorAll('input[required], select[required]');
+            let allFilled = true;
+            
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    allFilled = false;
+                }
+            });
+            
+            // Special check for pesticide form to ensure at least one item row is valid
+            if (formId === "pesticide") {
+                const rows = document.querySelectorAll('#pesticide-items-container .item-row');
+                if (rows.length > 0) {
+                    rows.forEach(row => {
+                        const rowInputs = row.querySelectorAll('input[required], select[required]');
+                        rowInputs.forEach(input => {
+                            if (!input.value.trim()) {
+                                allFilled = false;
+                            }
+                        });
+                    });
+                } else {
+                    allFilled = false; // No item rows
+                }
+            }
+            
+            // Enable or disable the submit button
+            submitBtn.disabled = !allFilled;
+            
+            // Visual feedback
+            if (allFilled) {
+                submitBtn.classList.add('ready');
+            } else {
+                submitBtn.classList.remove('ready');
+            }
+        }
+        
+        // Add this to the DOMContentLoaded event
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add the existing initialization code...
+            
+            // Add event listeners to all required inputs for live validation
+            document.querySelectorAll('input[required], select[required]').forEach(input => {
+                input.addEventListener('input', validateCurrentForm);
+                input.addEventListener('change', validateCurrentForm);
+                input.addEventListener('blur', validateCurrentForm);
+            });
+            
+            // Add event listeners to customer selects
+            document.querySelectorAll('#customer-select-rice, #customer-select-paddy, #customer-select-pesticide').forEach(select => {
+                select.addEventListener('change', validateCurrentForm);
+            });
+            
+            // Add listeners to the add/remove item functions for pesticide
+            const addItemBtn = document.getElementById('pesticide-add-item-btn');
+            if (addItemBtn) {
+                const originalAddFn = addPesticideRow;
+                window.addPesticideRow = function() {
+                    originalAddFn();
+                    // Add listeners to new row inputs
+                    const newRow = document.querySelector('#pesticide-items-container tr:last-child');
+                    if (newRow) {
+                        newRow.querySelectorAll('input[required], select[required]').forEach(input => {
+                            input.addEventListener('input', validateCurrentForm);
+                            input.addEventListener('change', validateCurrentForm);
+                        });
+                    }
+                    validateCurrentForm();
+                };
+            }
+            
+            // Override removeRow to validate after removing
+            const originalRemoveFn = removeRow;
+            window.removeRow = function(button) {
+                originalRemoveFn(button);
+                validateCurrentForm();
+            };
+            
+            // Initial validation
+            validateCurrentForm();
+        });
+        
+        // Add validation when switching tabs
+        const originalShowForm = showForm;
+        window.showForm = function(formType) {
+            originalShowForm(formType);
+            // Check form after tab switch
+            setTimeout(validateCurrentForm, 100);
+        };
+    </script>
+
+    <script>
+        // Prevent double form submissions
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get all order forms
+            const forms = document.querySelectorAll('.order-form');
+            
+            forms.forEach(function(form) {
+                form.addEventListener('submit', function(e) {
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    
+                    // Check if already submitted
+                    if (submitBtn.disabled) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    
+                    // Disable submit button and change text
+                    submitBtn.disabled = true;
+                    const originalText = submitBtn.textContent;
+                    submitBtn.textContent = 'Processing...';
+                    
+                    // Re-enable after a delay (fallback in case of errors)
+                    setTimeout(function() {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalText;
+                    }, 5000);
+                });
+            });
+        });
+    </script>
+
+</body>
+{% endblock %}
