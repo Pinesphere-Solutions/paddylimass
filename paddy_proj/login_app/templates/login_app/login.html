@@ -172,6 +172,16 @@
                   </button>
                 </div>
 
+                <!-- Add this between password wrapper and the submit button -->
+                <div style="text-align: right; margin: 6px 0 10px;">
+                  <a href="{% url 'login_app:forgot_password' %}" 
+                    style="font-size: 13px; color: #11998e; font-weight: 600; text-decoration: none; transition: opacity 0.2s;"
+                    onmouseover="this.style.opacity='0.7'" 
+                    onmouseout="this.style.opacity='1'">
+                    Forgot Password?
+                  </a>
+                </div>
+
                 <button class="login" type="submit">LOG IN</button>
               </form>
             </div>

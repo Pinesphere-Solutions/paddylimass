@@ -242,3 +242,20 @@ class Notification(models.Model):
 
 
 
+# --- Forgot password ---
+
+class PasswordResetOTP(models.Model):
+    email = models.EmailField()
+    otp = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+
+    def is_valid(self):
+        """OTP is valid for 10 minutes and not yet used"""
+        return not self.is_used and now() < self.created_at + timedelta(minutes=10)
+
+    def __str__(self):
+        return f"OTP for {self.email} - {'Used' if self.is_used else 'Active'}"
+
+
+

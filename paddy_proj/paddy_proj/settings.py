@@ -166,3 +166,15 @@ CSRF_TRUSTED_ORIGINS = [
 LOGIN_URL = 'login_app:login'  # Redirect to login app
 LOGIN_REDIRECT_URL = '/'  # Where to go after login (home page will handle routing)
 LOGOUT_REDIRECT_URL = 'login_app:login'  # Where to go after logout
+
+
+# settings.py
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False  # ← ADD THIS explicitly
+EMAIL_HOST_USER = 'limass.ecommerce@gmail.com'
+EMAIL_HOST_PASSWORD = 'rdxfnemmjppnjcvz'  # ← Remove spaces from app password
+DEFAULT_FROM_EMAIL = 'Limass <limass.ecommerce@gmail.com>'  # ← Add name format
