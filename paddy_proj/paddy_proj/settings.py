@@ -9,6 +9,11 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # add this near the top of settings.py
+
 
 from pathlib import Path
 import environ
@@ -182,6 +187,7 @@ LOGOUT_REDIRECT_URL = 'login_app:login'  # Where to go after logout
 
 
 
-# Add these ↓
-SENDGRID_API_KEY = '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'  # your SendGrid API key
-DEFAULT_FROM_EMAIL = 'Limass <limass.ecommerce@gmail.com>'  # must match verified sender
+
+# Replace the hardcoded key with:
+SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
+DEFAULT_FROM_EMAIL = 'Limass <limass.ecommerce@gmail.com>'
