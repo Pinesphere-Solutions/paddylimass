@@ -170,11 +170,18 @@ LOGOUT_REDIRECT_URL = 'login_app:login'  # Where to go after logout
 
 # settings.py
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_USE_SSL = False  # ← ADD THIS explicitly
-EMAIL_HOST_USER = 'limass.ecommerce@gmail.com'
-EMAIL_HOST_PASSWORD = 'rdxfnemmjppnjcvz'  # ← Remove spaces from app password
-DEFAULT_FROM_EMAIL = 'Limass <limass.ecommerce@gmail.com>'  # ← Add name format
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_USE_SSL = False  # ← ADD THIS explicitly
+# EMAIL_HOST_USER = 'limass.ecommerce@gmail.com'
+# EMAIL_HOST_PASSWORD = 'rdxfnemmjppnjcvz'  # ← Remove spaces from app password
+# DEFAULT_FROM_EMAIL = 'Limass <limass.ecommerce@gmail.com>'  # ← Add name format 
+
+
+
+
+# Add these ↓
+SENDGRID_API_KEY = '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'  # your SendGrid API key
+DEFAULT_FROM_EMAIL = 'Limass <limass.ecommerce@gmail.com>'  # must match verified sender

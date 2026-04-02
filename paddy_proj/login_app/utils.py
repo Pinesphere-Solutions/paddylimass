@@ -1,5 +1,6 @@
 import random
-from django.core.mail import send_mail
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, Content, To
 from django.conf import settings
 
 
@@ -9,26 +10,11 @@ def generate_otp():
 
 
 def send_otp_email(email, otp, user_name=""):
-    """Send OTP email for password reset"""
-    subject = "Password Reset OTP - MandyAg"
+    """Send OTP email via SendGrid API (works on DigitalOcean)"""
 
     greeting = f"Hello {user_name}," if user_name else "Hello,"
 
-    message = f"""
-{greeting}
-
-You requested a password reset for your MandyAg account.
-
-Your OTP is: {otp}
-
-This OTP is valid for 10 minutes. Do not share it with anyone.
-
-If you did not request this, please ignore this email.
-
-- The MandyAg Team
-"""
-
-    html_message = f"""
+    html_content = f"""
 <!DOCTYPE html>
 <html>
 <head>
@@ -52,7 +38,7 @@ If you did not request this, please ignore this email.
 <body>
   <div class="wrapper">
     <div class="header">
-      <h1>🌾 MandyAg</h1>
+      <h1>🌾 Limass</h1>
       <p>Password Reset Request</p>
     </div>
     <div class="body">
@@ -64,23 +50,43 @@ If you did not request this, please ignore this email.
         <div class="expiry">⏱ Expires in 10 minutes</div>
       </div>
       <div class="warning">
-        🔒 Never share this OTP with anyone. MandyAg will never ask for your OTP.
+        🔒 Never share this OTP with anyone. Limass will never ask for your OTP.
       </div>
-      <p style="margin-top:24px;">If you did not request a password reset, you can safely ignore this email. Your password will remain unchanged.</p>
+      <p style="margin-top:24px;">If you did not request a password reset, you can safely ignore this email.</p>
     </div>
     <div class="footer">
-      &copy; 2025 MandyAg. All rights reserved.<br/>This is an automated message, please do not reply.
+      &copy; 2025 Limass. All rights reserved.<br/>This is an automated message, please do not reply.
     </div>
   </div>
 </body>
 </html>
 """
 
-    send_mail(
-        subject=subject,
-        message=message,
+    plain_text = f"""
+{greeting}
+
+Your password reset OTP is: {otp}
+
+This OTP expires in 10 minutes. Do not share it with anyone.
+
+If you did not request this, please ignore this email.
+
+- The Limass Team
+"""
+
+    message = Mail(
         from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[email],
-        html_message=html_message,
-        fail_silently=False,
+        to_emails=email,
+        subject="Password Reset OTP - Limass",
+        plain_text_content=plain_text,
+        html_content=html_content,
     )
+
+    sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
+    response = sg.send(message)
+
+    # Raise if not 2xx
+    if response.status_code not in (200, 201, 202):
+        raise Exception(f"SendGrid error: {response.status_code} - {response.body}")
+
+    return response
