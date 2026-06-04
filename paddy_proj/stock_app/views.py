@@ -9,6 +9,23 @@ from paddy_app.models import AdminTable
 import json
 
 
+def get_template_name(template_base, role):
+    """
+    Return role-specific template name.
+    Maps generic template names to role-specific versions.
+    """
+    role_map = {
+        'admin': 'admin_app',
+        'superadmin': 'superadmin_app',
+        'customer': 'customer_app',
+    }
+    
+    app_name = role_map.get(role, 'admin_app')  # Default to admin
+    template_name = template_base.split('/')[-1]  # Get filename only
+    
+    return f'stock_app/{app_name}_{template_name}'
+
+
 def get_admin_context(request):
     """
     Helper function to get admin context based on user role
@@ -68,15 +85,17 @@ def stock_list(request):
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
     
+    role = request.session.get('role')
     context = {
         'page_obj': page_obj,
         'stocks': page_obj.object_list,
         'search_query': search_query,
         'can_edit': can_edit,
-        'role': request.session.get('role'),
+        'role': role,
     }
     
-    return render(request, 'stock_app/stock_list.html', context)
+    template_name = get_template_name('stock_app/stock_list.html', role)
+    return render(request, template_name, context)
 
 
 def stock_detail(request, stock_id):
@@ -96,16 +115,18 @@ def stock_detail(request, stock_id):
     total_deducted = deductions.aggregate(total=Sum('quantity_deducted'))['total'] or 0
     remaining_quantity = stock.quantity - total_deducted
     
+    role = request.session.get('role')
     context = {
         'stock': stock,
         'deductions': deductions,
         'total_deducted': total_deducted,
         'remaining_quantity': remaining_quantity,
         'can_edit': can_edit,
-        'role': request.session.get('role'),
+        'role': role,
     }
     
-    return render(request, 'stock_app/stock_detail.html', context)
+    template_name = get_template_name('stock_app/stock_detail.html', role)
+    return render(request, template_name, context)
 
 
 def add_stock(request):
@@ -159,7 +180,8 @@ def add_stock(request):
         'role': role,
     }
     
-    return render(request, 'stock_app/add_stock.html', context)
+    template_name = get_template_name('stock_app/add_stock.html', role)
+    return render(request, template_name, context)
 
 
 def update_stock(request, stock_id):
@@ -202,7 +224,8 @@ def update_stock(request, stock_id):
         'role': role,
     }
     
-    return render(request, 'stock_app/update_stock.html', context)
+    template_name = get_template_name('stock_app/update_stock.html', role)
+    return render(request, template_name, context)
 
 
 def delete_stock(request, stock_id):
@@ -236,7 +259,8 @@ def delete_stock(request, stock_id):
         'role': role,
     }
     
-    return render(request, 'stock_app/delete_stock.html', context)
+    template_name = get_template_name('stock_app/delete_stock.html', role)
+    return render(request, template_name, context)
 
 
 def deduct_stock(stock_id, order_id, quantity):

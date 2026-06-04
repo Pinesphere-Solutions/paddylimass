@@ -1,0 +1,201 @@
+{% extends 'superadmin_app/superadmin_base.html' %}
+{% load static %}
+
+{% block title %}Update Stock - {{ stock.batch }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h3 class="mb-0"><i class="fas fa-edit"></i> Update Stock</h3>
+                    <p class="mb-0 mt-2 text-muted">Batch: <strong>{{ stock.batch }}</strong></p>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Messages -->
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <form method="POST" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        <!-- Product Selection -->
+                        <div class="mb-3">
+                            <label for="product_name" class="form-label"><i class="fas fa-cubes"></i> Product <span class="text-danger">*</span></label>
+                            <select class="form-select form-select-lg" id="product_name" name="product_name" required>
+                                <option value="">-- Select Product --</option>
+                                <option value="rice" {% if stock.product_name == 'rice' %}selected{% endif %}>Rice</option>
+                                <option value="paddy" {% if stock.product_name == 'paddy' %}selected{% endif %}>Paddy</option>
+                            </select>
+                            <div class="invalid-feedback">Please select a product.</div>
+                        </div>
+
+                        <!-- Batch Number -->
+                        <div class="mb-3">
+                            <label for="batch" class="form-label"><i class="fas fa-barcode"></i> Batch Number <span class="text-danger">*</span></label>
+                            <input 
+                                type="text" 
+                                class="form-control form-control-lg" 
+                                id="batch" 
+                                name="batch" 
+                                value="{{ stock.batch }}"
+                                required
+                            >
+                            <div class="invalid-feedback">Batch number is required.</div>
+                        </div>
+
+                        <!-- Expiry Date -->
+                        <div class="mb-3">
+                            <label for="expiry_date" class="form-label"><i class="fas fa-calendar-times"></i> Expiry Date <span class="text-danger">*</span></label>
+                            <input 
+                                type="date" 
+                                class="form-control form-control-lg" 
+                                id="expiry_date" 
+                                name="expiry_date"
+                                value="{{ stock.expiry_date|date:'Y-m-d' }}"
+                                required
+                            >
+                            <div class="invalid-feedback">Expiry date is required.</div>
+                        </div>
+
+                        <!-- Quantity -->
+                        <div class="mb-3">
+                            <label for="quantity" class="form-label"><i class="fas fa-weight"></i> Quantity <span class="text-danger">*</span></label>
+                            <input 
+                                type="number" 
+                                class="form-control form-control-lg" 
+                                id="quantity" 
+                                name="quantity" 
+                                value="{{ stock.quantity }}"
+                                min="1"
+                                required
+                            >
+                            <small class="text-muted">Current quantity: {{ stock.quantity }} {{ stock.per }}</small>
+                            <div class="invalid-feedback">Please enter a valid quantity.</div>
+                        </div>
+
+                        <!-- Unit of Measurement -->
+                        <div class="mb-3">
+                            <label for="per" class="form-label"><i class="fas fa-ruler"></i> Unit (Per) <span class="text-danger">*</span></label>
+                            <select class="form-select form-select-lg" id="per" name="per" required>
+                                <option value="kg" {% if stock.per == 'kg' %}selected{% endif %}>Kilogram (kg)</option>
+                                <option value="bags" {% if stock.per == 'bags' %}selected{% endif %}>Bags</option>
+                                <option value="tons" {% if stock.per == 'tons' %}selected{% endif %}>Tons</option>
+                                <option value="liters" {% if stock.per == 'liters' %}selected{% endif %}>Liters</option>
+                                <option value="units" {% if stock.per == 'units' %}selected{% endif %}>Units</option>
+                            </select>
+                            <div class="invalid-feedback">Please select a unit.</div>
+                        </div>
+
+                        <!-- Rate -->
+                        <div class="mb-4">
+                            <label for="rate" class="form-label"><i class="fas fa-rupee-sign"></i> Rate per Unit <span class="text-danger">*</span></label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text">₹</span>
+                                <input 
+                                    type="number" 
+                                    class="form-control" 
+                                    id="rate" 
+                                    name="rate" 
+                                    value="{{ stock.rate }}"
+                                    step="0.01"
+                                    min="0"
+                                    required
+                                >
+                            </div>
+                            <div class="invalid-feedback">Please enter a valid rate.</div>
+                        </div>
+
+                        <!-- Amount (Auto-calculated) -->
+                        <div class="mb-4">
+                            <label for="amount" class="form-label"><i class="fas fa-calculator"></i> Total Amount (Auto-calculated)</label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text">₹</span>
+                                <input 
+                                    type="text" 
+                                    class="form-control" 
+                                    id="amount" 
+                                    value="{{ stock.amount }}"
+                                    readonly
+                                >
+                            </div>
+                            <small class="text-muted">Amount = Quantity × Rate per Unit</small>
+                        </div>
+
+                        <!-- Info Alert -->
+                        <div class="alert alert-info" role="alert">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Note:</strong> Updating quantity will affect the available stock for future deductions.
+                            Total deductions so far: <strong>{{ total_deducted }}</strong> {{ stock.per }}
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'stock_app:stock_detail' stock.stock_id %}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-warning btn-lg">
+                                <i class="fas fa-save"></i> Update Stock
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const quantityInput = document.getElementById('quantity');
+    const rateInput = document.getElementById('rate');
+    const amountInput = document.getElementById('amount');
+
+    function calculateAmount() {
+        const quantity = parseFloat(quantityInput.value) || 0;
+        const rate = parseFloat(rateInput.value) || 0;
+        const amount = (quantity * rate).toFixed(2);
+        amountInput.value = amount;
+    }
+
+    quantityInput.addEventListener('change', calculateAmount);
+    rateInput.addEventListener('change', calculateAmount);
+    quantityInput.addEventListener('input', calculateAmount);
+    rateInput.addEventListener('input', calculateAmount);
+
+    // Form validation
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+});
+</script>
+
+<style>
+    .card {
+        border: none;
+        border-top: 4px solid #ffc107;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #ffc107;
+        box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+    }
+    .input-group-text {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+    }
+</style>
+{% endblock %}
