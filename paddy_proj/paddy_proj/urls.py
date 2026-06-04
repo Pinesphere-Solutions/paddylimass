@@ -22,6 +22,7 @@ urlpatterns = [
     path('reports/', include('reports.urls')),
     path('notifications/', include('notifications.urls')),
     path('onboarding/', include('onboarding.urls')),
+    path('stock/', include('stock_app.urls')),
     
     # Main app routes - Keep this last to catch remaining URLs
     path('', include('paddy_app.urls')),

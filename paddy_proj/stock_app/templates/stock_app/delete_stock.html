@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Delete Stock - {{ stock.batch }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger shadow">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="mb-0"><i class="fas fa-trash-alt"></i> Delete Stock</h3>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Warning Message -->
+                    <div class="alert alert-danger" role="alert">
+                        <h4 class="alert-heading">
+                            <i class="fas fa-exclamation-triangle"></i> Warning
+                        </h4>
+                        <p>You are about to permanently delete this stock record.</p>
+                        <hr>
+                        <p class="mb-0">This action cannot be undone!</p>
+                    </div>
+
+                    <!-- Stock Details -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Stock Details</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-borderless table-sm">
+                                <tr>
+                                    <th>Stock ID:</th>
+                                    <td><strong>{{ stock.stock_id }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <th>Product:</th>
+                                    <td><span class="badge bg-info">{{ stock.get_product_name_display }}</span></td>
+                                </tr>
+                                <tr>
+                                    <th>Batch:</th>
+                                    <td><strong>{{ stock.batch }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <th>Quantity:</th>
+                                    <td>{{ stock.quantity }} {{ stock.per }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Rate:</th>
+                                    <td>₹{{ stock.rate }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Total Amount:</th>
+                                    <td>₹{{ stock.amount }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Expiry Date:</th>
+                                    <td>{{ stock.expiry_date|date:"d M Y" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Confirmation Form -->
+                    <form method="POST" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'stock_app:stock_detail' stock.stock_id %}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger btn-lg">
+                                <i class="fas fa-trash-alt"></i> Yes, Delete Stock
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: none;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    .card.border-danger {
+        border-left: 5px solid #dc3545 !important;
+    }
+    .btn-danger:hover {
+        background-color: #c82333;
+        border-color: #bd2130;
+    }
+</style>
+{% endblock %}

@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'onboarding',
     'admin_app',
     'customer_app',
+    'stock_app',
 ]
 
 MIDDLEWARE = [
