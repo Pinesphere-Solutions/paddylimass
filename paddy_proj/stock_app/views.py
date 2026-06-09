@@ -114,6 +114,7 @@ def stock_detail(request, stock_id):
     deductions = stock.deductions.all()
     total_deducted = deductions.aggregate(total=Sum('quantity_deducted'))['total'] or 0
     remaining_quantity = stock.quantity - total_deducted
+    remaining_value = remaining_quantity * stock.rate
     
     role = request.session.get('role')
     context = {
@@ -121,6 +122,7 @@ def stock_detail(request, stock_id):
         'deductions': deductions,
         'total_deducted': total_deducted,
         'remaining_quantity': remaining_quantity,
+        'remaining_value': remaining_value,
         'can_edit': can_edit,
         'role': role,
     }

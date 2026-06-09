@@ -4,7 +4,186 @@
 {% block title %}Add New Stock{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
+<style>
+.form-page { background-color: #f4f6f8; min-height: 100vh; padding: 2rem 1rem; }
+.form-container { max-width: 700px; margin: 0 auto; }
+.hero-section { background: linear-gradient(135deg, #28a745 0%, #1f7a33 100%); color: white; padding: 2rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3); }
+.hero-title { font-size: 1.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.75rem; }
+.form-card { background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); overflow: hidden; margin-bottom: 2rem; }
+.form-body { padding: 2rem; }
+.form-group { margin-bottom: 1.75rem; }
+.form-label { display: block; font-weight: 600; color: #333; margin-bottom: 0.75rem; font-size: 0.95rem; }
+.form-label span { color: #dc3545; }
+.form-input, .form-select { width: 100%; padding: 0.875rem 1rem; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 0.95rem; font-family: 'Inter', sans-serif; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.form-input:focus, .form-select:focus { outline: none; border-color: #28a745; box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1); background-color: #fafbfa; }
+.form-input::placeholder { color: #999; }
+.form-hint { font-size: 0.85rem; color: #666; margin-top: 0.5rem; font-style: italic; }
+.amount-display { background: linear-gradient(135deg, #e8f5e9 0%, #f1f8f6 100%); border: 2px solid #28a745; padding: 1.5rem; border-radius: 8px; margin-top: 1rem; }
+.amount-label { color: #666; font-size: 0.9rem; font-weight: 500; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px; }
+.amount-value { font-size: 1.75rem; font-weight: 700; color: #28a745; }
+.form-actions { display: flex; gap: 1rem; margin-top: 2.5rem; flex-wrap: wrap; }
+.submit-btn { background: linear-gradient(135deg, #28a745 0%, #1f7a33 100%); color: white; border: none; padding: 0.875rem 2rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 12px rgba(40, 167, 69, 0.25); flex: 1; min-width: 150px; }
+.submit-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(40, 167, 69, 0.35); }
+.cancel-btn { background: white; color: #333; border: 2px solid #e0e0e0; padding: 0.875rem 2rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); text-decoration: none; flex: 1; min-width: 150px; text-align: center; }
+.cancel-btn:hover { border-color: #28a745; color: #28a745; background-color: #f0f8f4; }
+.help-text { background: #f0f8f4; border-left: 4px solid #28a745; padding: 1rem; border-radius: 4px; margin-top: 2rem; font-size: 0.9rem; color: #555; }
+.success-message { background: #e8f5e9; border: 2px solid #28a745; color: #1b5e20; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; }
+.error-message { background: #ffebee; border: 2px solid #dc3545; color: #b71c1c; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; }
+@media (max-width: 768px) {
+  .form-body { padding: 1.5rem; }
+  .form-actions { flex-direction: column; }
+  .submit-btn, .cancel-btn { width: 100%; }
+}
+</style>
+
+<div class="form-page">
+    <div class="form-container">
+        <div class="hero-section">
+            <h1 class="hero-title">
+                <i class="fas fa-plus-circle"></i> Add New Stock
+            </h1>
+        </div>
+
+        <div class="form-card">
+            <div class="form-body">
+                {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags == 'success' %}
+                    <div class="success-message">
+                        <i class="fas fa-check-circle"></i> {{ message }}
+                    </div>
+                    {% else %}
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-circle"></i> {{ message }}
+                    </div>
+                    {% endif %}
+                {% endfor %}
+                {% endif %}
+
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <div class="form-group">
+                        <label for="product_name" class="form-label">
+                            <i class="fas fa-cubes"></i> Product Type <span>*</span>
+                        </label>
+                        <select class="form-select" id="product_name" name="product_name" required>
+                            <option value="">-- Select Product --</option>
+                            <option value="rice">Rice</option>
+                            <option value="paddy">Paddy</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="batch" class="form-label">
+                            <i class="fas fa-barcode"></i> Batch Number <span>*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            class="form-input" 
+                            id="batch" 
+                            name="batch" 
+                            placeholder="e.g., BATCH001"
+                            required
+                        >
+                        <div class="form-hint">Unique identifier for this stock batch</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="quantity" class="form-label">
+                            <i class="fas fa-weight"></i> Quantity <span>*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            class="form-input" 
+                            id="quantity" 
+                            name="quantity" 
+                            placeholder="Enter quantity"
+                            min="1"
+                            required
+                            onchange="calculateAmount()"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="per" class="form-label">
+                            <i class="fas fa-ruler"></i> Unit <span>*</span>
+                        </label>
+                        <select class="form-select" id="per" name="per" required>
+                            <option value="kg">Kilogram (kg)</option>
+                            <option value="bags">Bags</option>
+                            <option value="tons">Tons</option>
+                            <option value="units">Units</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="rate" class="form-label">
+                            <i class="fas fa-rupee-sign"></i> Rate per Unit <span>*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            class="form-input" 
+                            id="rate" 
+                            name="rate" 
+                            placeholder="Enter rate"
+                            step="0.01"
+                            min="0"
+                            required
+                            onchange="calculateAmount()"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="expiry_date" class="form-label">
+                            <i class="fas fa-calendar"></i> Expiry Date <span>*</span>
+                        </label>
+                        <input 
+                            type="date" 
+                            class="form-input" 
+                            id="expiry_date" 
+                            name="expiry_date" 
+                            required
+                        >
+                    </div>
+
+                    <div class="amount-display">
+                        <div class="amount-label">Total Amount (Auto-calculated)</div>
+                        <div class="amount-value">₹<span id="amountValue">0.00</span></div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="submit-btn">
+                            <i class="fas fa-check"></i> Add Stock
+                        </button>
+                        <a href="{% url 'stock_app:stock_list' %}" class="cancel-btn">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+
+                <div class="help-text">
+                    <i class="fas fa-info-circle"></i> <strong>Tip:</strong> The total amount is automatically calculated by multiplying quantity with rate per unit. Expiry date helps track stock freshness.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function calculateAmount() {
+    const quantity = parseFloat(document.getElementById('quantity').value) || 0;
+    const rate = parseFloat(document.getElementById('rate').value) || 0;
+    const amount = (quantity * rate).toFixed(2);
+    document.getElementById('amountValue').textContent = amount;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    calculateAmount();
+});
+</script>
+
+{% endblock %}
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card shadow">

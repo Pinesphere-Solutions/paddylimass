@@ -4,73 +4,107 @@
 {% block title %}Delete Stock - {{ stock.batch }}{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card border-danger shadow">
-                <div class="card-header bg-danger text-white">
-                    <h3 class="mb-0"><i class="fas fa-trash-alt"></i> Delete Stock</h3>
+<style>
+.delete-page { background-color: #f4f6f8; min-height: 100vh; padding: 2rem 1rem; }
+.delete-container { max-width: 600px; margin: 0 auto; }
+.hero-section { background: linear-gradient(135deg, #dc3545 0%, #bd2130 100%); color: white; padding: 2rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3); }
+.hero-title { font-size: 1.75rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.75rem; }
+.warning-icon { font-size: 3rem; margin-bottom: 1rem; display: block; text-align: center; }
+.delete-card { background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); overflow: hidden; margin-bottom: 2rem; }
+.card-header { background: #fff3cd; border-bottom: 2px solid #ffc107; padding: 1.5rem; }
+.card-header h3 { color: #856404; margin: 0; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; }
+.card-body { padding: 2rem; }
+.stock-info-table { width: 100%; border-collapse: collapse; margin-bottom: 2rem; }
+.stock-info-table th { text-align: left; padding: 0.75rem; background-color: #f9f9f9; font-weight: 600; border-bottom: 2px solid #e0e0e0; color: #333; }
+.stock-info-table td { padding: 0.75rem; border-bottom: 1px solid #f0f0f0; color: #555; }
+.danger-alert { background: #ffebee; border: 2px solid #dc3545; color: #c82333; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; text-align: center; }
+.danger-alert strong { display: block; font-size: 1.1rem; margin-bottom: 0.5rem; }
+.deduction-info { background: #f0f8f4; border-left: 4px solid #28a745; padding: 1rem; border-radius: 4px; margin-bottom: 2rem; font-size: 0.95rem; color: #555; }
+.confirmation-section { background: #f5f5f5; padding: 1.5rem; border-radius: 8px; margin-top: 2rem; }
+.confirmation-text { color: #666; margin-bottom: 1.5rem; font-size: 0.95rem; }
+.action-buttons { display: flex; gap: 1rem; flex-wrap: wrap; }
+.delete-btn { background: linear-gradient(135deg, #dc3545 0%, #bd2130 100%); color: white; border: none; padding: 0.875rem 2rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 12px rgba(220, 53, 69, 0.25); flex: 1; min-width: 150px; }
+.delete-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(220, 53, 69, 0.35); }
+.cancel-btn { background: white; color: #333; border: 2px solid #e0e0e0; padding: 0.875rem 2rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); text-decoration: none; flex: 1; min-width: 150px; text-align: center; }
+.cancel-btn:hover { border-color: #28a745; color: #28a745; background-color: #f0f8f4; }
+@media (max-width: 768px) {
+  .action-buttons { flex-direction: column; }
+  .delete-btn, .cancel-btn { width: 100%; }
+}
+</style>
+
+<div class="delete-page">
+    <div class="delete-container">
+        <div class="hero-section">
+            <span class="warning-icon"><i class="fas fa-exclamation-triangle"></i></span>
+            <h1 class="hero-title">
+                <i class="fas fa-trash"></i> Delete Stock
+            </h1>
+        </div>
+
+        <div class="delete-card">
+            <div class="card-header">
+                <h3><i class="fas fa-info-circle"></i> Confirm Deletion</h3>
+            </div>
+            <div class="card-body">
+                <div class="danger-alert">
+                    <strong><i class="fas fa-exclamation-circle"></i> Permanent Action</strong>
+                    <p style="margin:0;">This action cannot be undone. All stock data will be permanently removed.</p>
                 </div>
-                <div class="card-body p-4">
-                    <!-- Warning Message -->
-                    <div class="alert alert-danger" role="alert">
-                        <h4 class="alert-heading">
-                            <i class="fas fa-exclamation-triangle"></i> Warning
-                        </h4>
-                        <p>You are about to permanently delete this stock record.</p>
-                        <hr>
-                        <p class="mb-0">This action cannot be undone!</p>
+
+                <h4 style="color:#333;margin-bottom:1rem;">Stock Details</h4>
+                <table class="stock-info-table">
+                    <tr>
+                        <th style="width:40%;">Stock ID</th>
+                        <td>#{{ stock.stock_id }}</td>
+                    </tr>
+                    <tr>
+                        <th>Admin</th>
+                        <td>{{ stock.admin.first_name }} {{ stock.admin.last_name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Batch</th>
+                        <td><strong>{{ stock.batch }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Product</th>
+                        <td>{{ stock.get_product_name_display }}</td>
+                    </tr>
+                    <tr>
+                        <th>Quantity</th>
+                        <td>{{ stock.quantity }} {{ stock.per }}</td>
+                    </tr>
+                    <tr>
+                        <th>Total Amount</th>
+                        <td style="color:#28a745;font-weight:700;">₹{{ stock.amount }}</td>
+                    </tr>
+                    <tr>
+                        <th>Expiry Date</th>
+                        <td>{{ stock.expiry_date|date:"d MMM Y" }}</td>
+                    </tr>
+                </table>
+
+                {% if deductions %}
+                <div class="deduction-info">
+                    <i class="fas fa-history"></i> <strong>Note:</strong> This stock has {{ deductions|length }} deduction record(s) associated with it. These records will also be deleted.
+                </div>
+                {% endif %}
+
+                <div class="confirmation-section">
+                    <div class="confirmation-text">
+                        <strong>Are you absolutely sure you want to delete this stock entry?</strong><br>
+                        Please review the details above before confirming.
                     </div>
 
-                    <!-- Stock Details -->
-                    <div class="card mb-4">
-                        <div class="card-header bg-light">
-                            <h5 class="mb-0">Stock Details</h5>
-                        </div>
-                        <div class="card-body">
-                            <table class="table table-borderless table-sm">
-                                <tr>
-                                    <th>Stock ID:</th>
-                                    <td><strong>{{ stock.stock_id }}</strong></td>
-                                </tr>
-                                <tr>
-                                    <th>Product:</th>
-                                    <td><span class="badge bg-info">{{ stock.get_product_name_display }}</span></td>
-                                </tr>
-                                <tr>
-                                    <th>Batch:</th>
-                                    <td><strong>{{ stock.batch }}</strong></td>
-                                </tr>
-                                <tr>
-                                    <th>Quantity:</th>
-                                    <td>{{ stock.quantity }} {{ stock.per }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Rate:</th>
-                                    <td>₹{{ stock.rate }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Total Amount:</th>
-                                    <td>₹{{ stock.amount }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Expiry Date:</th>
-                                    <td>{{ stock.expiry_date|date:"d M Y" }}</td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Confirmation Form -->
-                    <form method="POST" class="mt-4">
+                    <form method="POST">
                         {% csrf_token %}
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{% url 'stock_app:stock_detail' stock.stock_id %}" class="btn btn-secondary btn-lg">
+                        <div class="action-buttons">
+                            <button type="submit" class="delete-btn">
+                                <i class="fas fa-check"></i> Yes, Delete Stock
+                            </button>
+                            <a href="{% url 'stock_app:stock_detail' stock.stock_id %}" class="cancel-btn">
                                 <i class="fas fa-times"></i> Cancel
                             </a>
-                            <button type="submit" class="btn btn-danger btn-lg">
-                                <i class="fas fa-trash-alt"></i> Yes, Delete Stock
-                            </button>
                         </div>
                     </form>
                 </div>
@@ -79,17 +113,5 @@
     </div>
 </div>
 
-<style>
-    .card {
-        border: none;
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-    }
-    .card.border-danger {
-        border-left: 5px solid #dc3545 !important;
-    }
-    .btn-danger:hover {
-        background-color: #c82333;
-        border-color: #bd2130;
-    }
-</style>
 {% endblock %}
+    

@@ -4,209 +4,331 @@
 {% block title %}Stock Details - {{ stock.batch }}{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h2 class="mb-0">
-                <i class="fas fa-box"></i> Stock Details
-            </h2>
-            <p class="text-muted mt-2">Batch: <strong>{{ stock.batch }}</strong></p>
+
+<style>
+/* ── Base ── */
+.detail-page { background-color: #f4f6f8; min-height: 100vh; padding: 2rem 1rem; }
+
+/* ── Page Header ── */
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+.page-title { font-size: 2rem; font-weight: 700; color: #333; margin: 0; display: flex; align-items: center; gap: 0.75rem; }
+.page-title i { color: #28a745; }
+.page-subtitle { color: #888; font-size: 0.95rem; margin-top: 0.25rem; }
+.header-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+/* ── Buttons ── */
+.btn-action { padding: 0.65rem 1.25rem; border-radius: 8px; font-weight: 600; font-size: 0.875rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; border: none; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.btn-back { background-color: #f0f0f0; color: #555; }
+.btn-back:hover { background-color: #e0e0e0; color: #333; }
+.btn-edit { background: linear-gradient(135deg, #7b1fa2 0%, #5c1678 100%); color: white; box-shadow: 0 4px 12px rgba(123, 31, 162, 0.25); }
+.btn-edit:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(123, 31, 162, 0.35); color: white; }
+.btn-delete { background: linear-gradient(135deg, #c62828 0%, #8e1a1a 100%); color: white; box-shadow: 0 4px 12px rgba(198, 40, 40, 0.25); }
+.btn-delete:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(198, 40, 40, 0.35); color: white; }
+
+/* ── Stats Row ── */
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+.stat-card { background: white; border-radius: 12px; padding: 1.4rem 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.07); border-left: 4px solid #28a745; transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s; }
+.stat-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.11); }
+.stat-card.accent-blue { border-left-color: #1976d2; }
+.stat-card.accent-red { border-left-color: #c62828; }
+.stat-card.accent-teal { border-left-color: #00897b; }
+.stat-card.accent-orange { border-left-color: #e65100; }
+.stat-icon { font-size: 1.6rem; margin-bottom: 0.5rem; }
+.stat-card.accent-blue .stat-icon { color: #1976d2; }
+.stat-card.accent-red .stat-icon { color: #c62828; }
+.stat-card.accent-teal .stat-icon { color: #00897b; }
+.stat-card.accent-orange .stat-icon { color: #e65100; }
+.stat-card .stat-icon { color: #28a745; }
+.stat-label { color: #888; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.35rem; }
+.stat-value { font-size: 1.6rem; font-weight: 700; color: #222; line-height: 1.1; }
+.stat-unit { font-size: 0.85rem; font-weight: 500; color: #999; margin-left: 0.2rem; }
+
+/* ── Section Cards ── */
+.section-card { background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.07); margin-bottom: 1.75rem; overflow: hidden; }
+.section-header { padding: 1.1rem 1.5rem; display: flex; align-items: center; gap: 0.6rem; }
+.section-header h3 { margin: 0; font-size: 1rem; font-weight: 700; color: white; }
+.section-header i { color: white; font-size: 1rem; }
+.sh-green { background: linear-gradient(135deg, #28a745 0%, #1f7a33 100%); }
+.sh-blue  { background: linear-gradient(135deg, #1976d2 0%, #0d47a1 100%); }
+.sh-teal  { background: linear-gradient(135deg, #00897b 0%, #00574b 100%); }
+.sh-amber { background: linear-gradient(135deg, #f57c00 0%, #bf360c 100%); }
+.section-body { padding: 1.5rem; }
+
+/* ── Info Grid ── */
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.info-item { display: flex; flex-direction: column; gap: 0.2rem; }
+.info-item-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #aaa; }
+.info-item-value { font-size: 0.95rem; font-weight: 600; color: #333; }
+
+/* ── Balance Bar ── */
+.balance-bar-wrap { margin-top: 1.25rem; }
+.balance-bar-labels { display: flex; justify-content: space-between; margin-bottom: 0.4rem; font-size: 0.8rem; color: #888; font-weight: 600; }
+.balance-bar-bg { background: #f0f0f0; border-radius: 99px; height: 12px; overflow: hidden; }
+.balance-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #28a745, #1f7a33); transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+.balance-bar-fill.low { background: linear-gradient(90deg, #c62828, #e53935); }
+.balance-bar-fill.mid { background: linear-gradient(90deg, #f57c00, #ffa000); }
+
+/* ── Product Badge ── */
+.product-badge { background: linear-gradient(135deg, #17a2b8 0%, #0d6c8a 100%); color: white; padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; display: inline-block; }
+
+/* ── Expiry Badge ── */
+.expiry-ok  { background: #e8f5e9; color: #2e7d32; padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; display: inline-block; }
+.expiry-warn{ background: #fff8e1; color: #f57c00; padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; display: inline-block; }
+.expiry-bad { background: #ffebee; color: #c62828; padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; display: inline-block; }
+
+/* ── Deduction Table ── */
+.deduction-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.deduction-table thead { background: #f9f9f9; }
+.deduction-table th { padding: 0.85rem 1rem; text-align: left; font-weight: 700; color: #555; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; border-bottom: 2px solid #eee; }
+.deduction-table td { padding: 0.85rem 1rem; border-bottom: 1px solid #f5f5f5; color: #444; vertical-align: middle; }
+.deduction-table tbody tr:hover { background: #fafafa; }
+.deduction-table tbody tr:last-child td { border-bottom: none; }
+.qty-badge { background: #ffebee; color: #c62828; padding: 0.3rem 0.65rem; border-radius: 6px; font-size: 0.82rem; font-weight: 700; display: inline-block; }
+.order-link { color: #1976d2; font-weight: 600; text-decoration: none; }
+.order-link:hover { text-decoration: underline; }
+
+/* ── Empty State ── */
+.empty-state { text-align: center; padding: 3rem 2rem; }
+.empty-state i { font-size: 2.5rem; color: #ddd; margin-bottom: 1rem; }
+.empty-state p { color: #aaa; font-size: 1rem; margin: 0; }
+
+/* ── Divider ── */
+.fin-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1.25rem; }
+.fin-item { text-align: center; padding: 1rem; background: #f9f9f9; border-radius: 10px; }
+.fin-label { font-size: 0.75rem; color: #aaa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.4rem; }
+.fin-val { font-size: 1.4rem; font-weight: 700; color: #222; }
+.fin-val.green { color: #28a745; }
+.fin-val.blue  { color: #1976d2; }
+.fin-val.teal  { color: #00897b; }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .page-header { flex-direction: column; align-items: stretch; }
+  .header-actions { flex-wrap: wrap; }
+  .btn-action { flex: 1; justify-content: center; }
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .info-grid { grid-template-columns: 1fr; }
+  .fin-row { grid-template-columns: 1fr 1fr; }
+  .page-title { font-size: 1.6rem; }
+}
+@media (max-width: 480px) {
+  .stats-row { grid-template-columns: 1fr; }
+  .fin-row { grid-template-columns: 1fr; }
+  .detail-page { padding: 1rem 0.75rem; }
+  .deduction-table th, .deduction-table td { padding: 0.65rem 0.6rem; font-size: 0.8rem; }
+}
+</style>
+
+<div class="detail-page">
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title"><i class="fas fa-box-open"></i> Stock Details</h1>
+            <p class="page-subtitle">Batch: <strong>{{ stock.batch }}</strong> &nbsp;·&nbsp; <span class="product-badge">{{ stock.get_product_name_display }}</span></p>
         </div>
-        <div class="col-md-4 text-end">
+        <div class="header-actions">
+            <a href="{% url 'stock_app:stock_list' %}" class="btn-action btn-back">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
             {% if can_edit %}
-            <a href="{% url 'stock_app:update_stock' stock.stock_id %}" class="btn btn-warning btn-lg">
+            <a href="{% url 'stock_app:update_stock' stock.stock_id %}" class="btn-action btn-edit">
                 <i class="fas fa-edit"></i> Edit
             </a>
-            <a href="{% url 'stock_app:delete_stock' stock.stock_id %}" class="btn btn-danger btn-lg">
+            <a href="{% url 'stock_app:delete_stock' stock.stock_id %}" class="btn-action btn-delete">
                 <i class="fas fa-trash"></i> Delete
             </a>
             {% endif %}
-            <a href="{% url 'stock_app:stock_list' %}" class="btn btn-secondary btn-lg">
-                <i class="fas fa-arrow-left"></i> Back
-            </a>
         </div>
     </div>
 
-    <!-- Messages -->
     {% if messages %}
-    <div class="row mb-4">
-        <div class="col-md-12">
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-            {% endfor %}
-        </div>
+    {% for message in messages %}
+    <div style="background:#e8f5e9;border-left:4px solid #28a745;padding:0.9rem 1.25rem;border-radius:8px;margin-bottom:1.25rem;color:#2e7d32;font-weight:600;">
+        <i class="fas fa-check-circle"></i> {{ message }}
     </div>
+    {% endfor %}
     {% endif %}
 
-    <!-- Stock Information -->
-    <div class="row mb-5">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Stock Information</h5>
-                </div>
-                <div class="card-body">
-                    <table class="table table-borderless">
-                        <tr>
-                            <th>Stock ID:</th>
-                            <td><strong>{{ stock.stock_id }}</strong></td>
-                        </tr>
-                        <tr>
-                            <th>Product:</th>
-                            <td><span class="badge bg-info">{{ stock.get_product_name_display }}</span></td>
-                        </tr>
-                        <tr>
-                            <th>Batch:</th>
-                            <td><strong>{{ stock.batch }}</strong></td>
-                        </tr>
-                        <tr>
-                            <th>Admin:</th>
-                            <td>{{ stock.admin.first_name }} {{ stock.admin.last_name }}</td>
-                        </tr>
-                        <tr>
-                            <th>Created:</th>
-                            <td>{{ stock.created_at|date:"d M Y, H:i" }}</td>
-                        </tr>
-                        <tr>
-                            <th>Updated:</th>
-                            <td>{{ stock.updated_at|date:"d M Y, H:i" }}</td>
-                        </tr>
-                    </table>
-                </div>
-            </div>
+    <!-- Key Stats -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-cubes"></i></div>
+            <div class="stat-label">Total Quantity</div>
+            <div class="stat-value">{{ stock.quantity }}<span class="stat-unit">{{ stock.per }}</span></div>
         </div>
+        <div class="stat-card accent-red">
+            <div class="stat-icon"><i class="fas fa-minus-circle"></i></div>
+            <div class="stat-label">Total Deducted</div>
+            <div class="stat-value">{{ total_deducted }}<span class="stat-unit">{{ stock.per }}</span></div>
+        </div>
+        <div class="stat-card accent-teal">
+            <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-label">Remaining</div>
+            <div class="stat-value">{{ remaining_quantity }}<span class="stat-unit">{{ stock.per }}</span></div>
+        </div>
+        <div class="stat-card accent-orange">
+            <div class="stat-icon"><i class="fas fa-rupee-sign"></i></div>
+            <div class="stat-label">Remaining Value</div>
+            <div class="stat-value">₹{{ remaining_value }}</div>
+        </div>
+    </div>
 
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Quantity Details</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row text-center mb-4">
-                        <div class="col-md-6">
-                            <h6 class="text-muted">Total Quantity</h6>
-                            <h3 class="text-primary">
-                                {{ stock.quantity }} <small class="text-muted">{{ stock.per }}</small>
-                            </h3>
-                        </div>
-                        <div class="col-md-6">
-                            <h6 class="text-muted">Total Deducted</h6>
-                            <h3 class="text-danger">
-                                {{ total_deducted }} <small class="text-muted">{{ stock.per }}</small>
-                            </h3>
-                        </div>
-                    </div>
-                    <div class="alert alert-info" role="alert">
-                        <h6 class="mb-2">Remaining Balance:</h6>
-                        <h2 class="text-success mb-0">
-                            {{ remaining_quantity }} <small>{{ stock.per }}</small>
-                        </h2>
-                    </div>
-                </div>
+    <!-- Stock Usage Bar -->
+    <div class="section-card">
+        <div class="section-header sh-green">
+            <i class="fas fa-chart-line"></i>
+            <h3>Stock Usage Overview</h3>
+        </div>
+        <div class="section-body">
+            <div class="balance-bar-labels">
+                <span>Used: {{ total_deducted }} {{ stock.per }}</span>
+                <span>Remaining: {{ remaining_quantity }} {{ stock.per }}</span>
+            </div>
+            <div class="balance-bar-bg">
+                {% if stock.quantity > 0 %}
+                {% widthratio total_deducted stock.quantity 100 as used_pct %}
+                <div class="balance-bar-fill {% if used_pct >= 80 %}low{% elif used_pct >= 50 %}mid{% endif %}" style="width: {{ used_pct }}%"></div>
+                {% endif %}
+            </div>
+            <div style="margin-top:0.5rem;font-size:0.82rem;color:#aaa;text-align:right;">
+                {% if stock.quantity > 0 %}{{ used_pct }}% utilised{% endif %}
             </div>
         </div>
     </div>
 
-    <!-- Financial Details -->
-    <div class="row mb-5">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header bg-secondary text-white">
-                    <h5 class="mb-0"><i class="fas fa-money-bill-wave"></i> Financial Details</h5>
+    <!-- Two column: Stock Info + Financial Details -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.75rem;margin-bottom:1.75rem;">
+
+        <!-- Stock Info -->
+        <div class="section-card" style="margin-bottom:0;">
+            <div class="section-header sh-blue">
+                <i class="fas fa-info-circle"></i>
+                <h3>Stock Information</h3>
+            </div>
+            <div class="section-body">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-item-label">Stock ID</span>
+                        <span class="info-item-value">#{{ stock.stock_id }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-item-label">Product</span>
+                        <span class="info-item-value"><span class="product-badge">{{ stock.get_product_name_display }}</span></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-item-label">Batch</span>
+                        <span class="info-item-value">{{ stock.batch }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-item-label">Managed By</span>
+                        <span class="info-item-value">{{ stock.admin.first_name }} {{ stock.admin.last_name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-item-label">Created</span>
+                        <span class="info-item-value">{{ stock.created_at|date:"d M Y" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-item-label">Last Updated</span>
+                        <span class="info-item-value">{{ stock.updated_at|date:"d M Y" }}</span>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3 border-end">
-                            <h6 class="text-muted">Rate per {{ stock.per }}</h6>
-                            <h3 class="text-primary">₹{{ stock.rate }}</h3>
-                        </div>
-                        <div class="col-md-3 border-end">
-                            <h6 class="text-muted">Total Amount</h6>
-                            <h3 class="text-success">₹{{ stock.amount }}</h3>
-                        </div>
-                        <div class="col-md-3 border-end">
-                            <h6 class="text-muted">Expiry Date</h6>
-                            <h4>
-                                {% if stock.expiry_date %}
-                                <span class="badge bg-{% if stock.expiry_date|add:"-30 days" <= today %}danger{% else %}warning{% endif %}">
-                                    {{ stock.expiry_date|date:"d M Y" }}
-                                </span>
-                                {% else %}
-                                <span class="badge bg-secondary">N/A</span>
-                                {% endif %}
-                            </h4>
-                        </div>
-                        <div class="col-md-3">
-                            <h6 class="text-muted">Value of Remaining</h6>
-                            <h3 class="text-info">₹{{ remaining_quantity|mul:stock.rate }}</h3>
+            </div>
+        </div>
+
+        <!-- Financial Details -->
+        <div class="section-card" style="margin-bottom:0;">
+            <div class="section-header sh-teal">
+                <i class="fas fa-money-bill-wave"></i>
+                <h3>Financial Details</h3>
+            </div>
+            <div class="section-body">
+                <div class="fin-row">
+                    <div class="fin-item">
+                        <div class="fin-label">Rate / {{ stock.per }}</div>
+                        <div class="fin-val blue">₹{{ stock.rate }}</div>
+                    </div>
+                    <div class="fin-item">
+                        <div class="fin-label">Total Amount</div>
+                        <div class="fin-val green">₹{{ stock.amount }}</div>
+                    </div>
+                    <div class="fin-item">
+                        <div class="fin-label">Remaining Value</div>
+                        <div class="fin-val teal">₹{{ remaining_value }}</div>
+                    </div>
+                    <div class="fin-item">
+                        <div class="fin-label">Expiry Date</div>
+                        <div style="margin-top:0.2rem;">
+                            {% if stock.expiry_date %}
+                                <span class="expiry-ok">{{ stock.expiry_date|date:"d M Y" }}</span>
+                            {% else %}
+                                <span style="color:#bbb;font-size:0.9rem;">N/A</span>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
     </div>
 
     <!-- Deduction History -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header bg-warning text-dark">
-                    <h5 class="mb-0"><i class="fas fa-history"></i> Deduction History</h5>
-                </div>
-                <div class="card-body">
-                    {% if deductions %}
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Deduction ID</th>
-                                    <th>Order ID</th>
-                                    <th>Quantity Deducted</th>
-                                    <th>Deduction Date</th>
-                                    <th>Notes</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for deduction in deductions %}
-                                <tr>
-                                    <td><strong>#{{ deduction.deduction_id }}</strong></td>
-                                    <td><a href="{% url 'orders_app:order_detail' deduction.order_id %}" class="text-decoration-none">#{{ deduction.order_id }}</a></td>
-                                    <td>
-                                        <span class="badge bg-danger">{{ deduction.quantity_deducted }} {{ stock.per }}</span>
-                                    </td>
-                                    <td>{{ deduction.deduction_date|date:"d M Y, H:i" }}</td>
-                                    <td>{{ deduction.notes|default:"—" }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <div class="alert alert-info text-center">
-                        <i class="fas fa-inbox fa-2x mb-3"></i>
-                        <p class="mt-2">No deductions recorded yet for this stock.</p>
-                    </div>
-                    {% endif %}
-                </div>
+    <div class="section-card">
+        <div class="section-header sh-amber">
+            <i class="fas fa-history"></i>
+            <h3>Deduction History</h3>
+        </div>
+        <div class="section-body" style="padding:0;">
+            {% if deductions %}
+            <div style="overflow-x:auto;">
+                <table class="deduction-table">
+                    <thead>
+                        <tr>
+                            <th>Deduction ID</th>
+                            <th>Order</th>
+                            <th>Qty Deducted</th>
+                            <th>Date</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for deduction in deductions %}
+                        <tr>
+                            <td><strong>#{{ deduction.deduction_id }}</strong></td>
+                            <td>
+                                <a href="{% url 'orders_app:order_detail' deduction.order_id %}" class="order-link">
+                                    #{{ deduction.order_id }}
+                                </a>
+                            </td>
+                            <td><span class="qty-badge">{{ deduction.quantity_deducted }} {{ stock.per }}</span></td>
+                            <td>{{ deduction.deduction_date|date:"d M Y, H:i" }}</td>
+                            <td style="color:#888;">{{ deduction.notes|default:"—" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <p>No deductions recorded yet for this stock item.</p>
+            </div>
+            {% endif %}
         </div>
     </div>
+
 </div>
 
+<!-- Responsive: stack two-col on mobile -->
 <style>
-    .card {
-        border: none;
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    }
-    .badge {
-        font-size: 0.85rem;
-        padding: 0.5rem 0.75rem;
-    }
-    .card-header {
-        border-bottom: 1px solid rgba(0, 0, 0, 0.125);
-    }
+@media (max-width: 768px) {
+  div[style*="grid-template-columns:1fr 1fr"] {
+    display: block !important;
+  }
+  div[style*="grid-template-columns:1fr 1fr"] > .section-card {
+    margin-bottom: 1.75rem !important;
+  }
+}
 </style>
+
 {% endblock %}

@@ -4,7 +4,193 @@
 {% block title %}Stock Details - {{ stock.batch }}{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
+<style>
+.detail-page { background-color: #f4f6f8; min-height: 100vh; padding: 2rem 1rem; }
+.hero-section { background: linear-gradient(135deg, #28a745 0%, #1f7a33 100%); color: white; padding: 2rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3); }
+.hero-title { font-size: 2rem; font-weight: 700; margin: 0 0 0.5rem 0; }
+.hero-batch { font-size: 1.1rem; opacity: 0.9; margin: 0; }
+.action-bar { display: flex; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap; }
+.action-btn { background: rgba(255, 255, 255, 0.2); color: white; border: 2px solid rgba(255, 255, 255, 0.4); padding: 0.75rem 1.25rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; }
+.action-btn:hover { background: rgba(255, 255, 255, 0.3); border-color: white; color: white; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+.stat-card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); text-align: center; border-top: 4px solid #28a745; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.stat-card:hover { transform: translateY(-4px); box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12); }
+.stat-label { color: #666; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-value { font-size: 1.75rem; font-weight: 700; color: #333; }
+.content-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem; margin-bottom: 2rem; }
+.info-card { background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); overflow: hidden; }
+.card-header { background: linear-gradient(135deg, #28a745 0%, #1f7a33 100%); color: white; padding: 1.5rem; }
+.card-header h3 { margin: 0; font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; }
+.card-body { padding: 1.5rem; }
+.info-row { display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #f0f0f0; }
+.info-row:last-child { border: none; }
+.info-label { color: #666; font-weight: 500; font-size: 0.9rem; }
+.info-value { color: #333; font-weight: 600; font-size: 0.95rem; }
+.deduction-table { width: 100%; border-collapse: collapse; }
+.deduction-table thead { background-color: #f9f9f9; }
+.deduction-table th { padding: 1rem; text-align: left; font-weight: 600; color: #333; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px; border-bottom: 2px solid #e0e0e0; }
+.deduction-table td { padding: 1rem; border-bottom: 1px solid #f0f0f0; color: #555; }
+.deduction-table tbody tr { transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+.deduction-table tbody tr:hover { background-color: #f9f9f9; }
+.empty-deduction { text-align: center; padding: 2rem; color: #999; }
+.back-btn { background: white; color: #333; border: 2px solid #e0e0e0; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; }
+.back-btn:hover { border-color: #28a745; color: #28a745; background-color: #f0f8f4; }
+@media (max-width: 768px) {
+  .hero-section { padding: 1.5rem; }
+  .hero-title { font-size: 1.5rem; }
+  .action-bar { flex-direction: column; }
+  .action-btn { width: 100%; justify-content: center; }
+  .stats-grid { grid-template-columns: 1fr; }
+  .content-grid { grid-template-columns: 1fr; }
+  .info-row { flex-direction: column; gap: 0.5rem; }
+}
+</style>
+
+<div class="detail-page">
+    <div class="hero-section">
+        <h1 class="hero-title"><i class="fas fa-box-open"></i> Stock Details (View Only)</h1>
+        <p class="hero-batch">Batch: {{ stock.batch }} | Admin: {{ stock.admin.first_name }} {{ stock.admin.last_name }}</p>
+        <div class="action-bar">
+            <a href="{% url 'stock_app:stock_list' %}" class="action-btn">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label"><i class="fas fa-cube"></i> Current Quantity</div>
+            <div class="stat-value">{{ stock.quantity }}</div>
+            <div style="color:#666;font-size:0.9rem;margin-top:0.5rem;">{{ stock.per }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label"><i class="fas fa-cubes"></i> Remaining Quantity</div>
+            <div class="stat-value">{{ remaining_quantity }}</div>
+            <div style="color:#666;font-size:0.9rem;margin-top:0.5rem;">{{ stock.per }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label"><i class="fas fa-rupee-sign"></i> Total Value</div>
+            <div class="stat-value">₹{{ stock.amount }}</div>
+            <div style="color:#666;font-size:0.9rem;margin-top:0.5rem;">Full Inventory</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label"><i class="fas fa-rupee-sign"></i> Remaining Value</div>
+            <div class="stat-value">₹{{ remaining_value }}</div>
+            <div style="color:#666;font-size:0.9rem;margin-top:0.5rem;">After Deductions</div>
+        </div>
+    </div>
+
+    <div class="content-grid">
+        <div class="info-card">
+            <div class="card-header">
+                <h3><i class="fas fa-info-circle"></i> Stock Information</h3>
+            </div>
+            <div class="card-body">
+                <div class="info-row">
+                    <span class="info-label">Stock ID</span>
+                    <span class="info-value">#{{ stock.stock_id }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Product Type</span>
+                    <span class="info-value"><span style="background:linear-gradient(135deg,#17a2b8 0%,#0d6c8a 100%);color:white;padding:0.4rem 0.8rem;border-radius:6px;font-size:0.85rem;">{{ stock.get_product_name_display }}</span></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Quantity Per Unit</span>
+                    <span class="info-value">{{ stock.per }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Rate Per Unit</span>
+                    <span class="info-value">₹{{ stock.rate }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Total Amount</span>
+                    <span class="info-value" style="color:#28a745;font-weight:700;">₹{{ stock.amount }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Expiry Date</span>
+                    <span class="info-value">{{ stock.expiry_date|date:"d MMM Y" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Created At</span>
+                    <span class="info-value">{{ stock.created_at|date:"d MMM Y" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-card">
+            <div class="card-header">
+                <h3><i class="fas fa-chart-bar"></i> Deduction Summary</h3>
+            </div>
+            <div class="card-body">
+                <div class="info-row">
+                    <span class="info-label">Total Deducted</span>
+                    <span class="info-value">{{ total_deducted }} {{ stock.per }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Remaining Quantity</span>
+                    <span class="info-value" style="color:#28a745;">{{ remaining_quantity }} {{ stock.per }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Deduction Percentage</span>
+                    <span class="info-value">{% if stock.quantity %}{{ deduction_percentage|default:"0" }}%{% else %}0%{% endif %}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Number of Deductions</span>
+                    <span class="info-value">{{ deductions|length }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Last Deduction</span>
+                    <span class="info-value">{% if deductions %}{{ deductions.0.created_at|date:"d M Y" }}{% else %}Never{% endif %}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-card">
+        <div class="card-header">
+            <h3><i class="fas fa-history"></i> Deduction History</h3>
+        </div>
+        <div class="card-body">
+            {% if deductions %}
+            <div style="overflow-x:auto;">
+                <table class="deduction-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Quantity Deducted</th>
+                            <th>Order ID</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for deduction in deductions %}
+                        <tr>
+                            <td>{{ deduction.created_at|date:"d M Y H:i" }}</td>
+                            <td><strong>{{ deduction.quantity_deducted }} {{ stock.per }}</strong></td>
+                            <td>#{{ deduction.order_id }}</td>
+                            <td>{{ deduction.notes|default:"-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-deduction">
+                <i class="fas fa-check-circle" style="font-size:2rem;color:#28a745;"></i>
+                <p>No deductions yet. Stock is intact!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="margin-top:2rem;">
+        <a href="{% url 'stock_app:stock_list' %}" class="back-btn">
+            <i class="fas fa-arrow-left"></i> Back to Stock List
+        </a>
+    </div>
+</div>
+
+{% endblock %}
     <div class="row mb-4">
         <div class="col-md-8">
             <h2 class="mb-0">
@@ -141,7 +327,7 @@
                         </div>
                         <div class="col-md-3">
                             <h6 class="text-muted">Value of Remaining</h6>
-                            <h3 class="text-info">₹{{ remaining_quantity|mul:stock.rate }}</h3>
+                            <h3 class="text-info">₹{{ remaining_value }}</h3>
                         </div>
                     </div>
                 </div>
