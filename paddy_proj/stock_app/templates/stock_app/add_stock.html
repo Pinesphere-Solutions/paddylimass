@@ -44,12 +44,8 @@
                         <!-- Product Selection -->
                         <div class="mb-3">
                             <label for="product_name" class="form-label"><i class="fas fa-cubes"></i> Product <span class="text-danger">*</span></label>
-                            <select class="form-select form-select-lg" id="product_name" name="product_name" required>
-                                <option value="">-- Select Product --</option>
-                                <option value="rice">Rice</option>
-                                <option value="paddy">Paddy</option>
-                            </select>
-                            <div class="invalid-feedback">Please select a product.</div>
+                            <input type="text" class="form-control form-control-lg" id="product_name" name="product_name" required>
+                            <div class="invalid-feedback">Please enter a product name.</div>
                         </div>
 
                         <!-- Batch Number -->
@@ -95,15 +91,16 @@
                             <div class="invalid-feedback">Please enter a valid quantity (minimum 1).</div>
                         </div>
 
-                        <!-- Unit of Measurement -->
+                       <!-- Unit of Measurement -->
                         <div class="mb-3">
                             <label for="per" class="form-label"><i class="fas fa-ruler"></i> Unit (Per) <span class="text-danger">*</span></label>
                             <select class="form-select form-select-lg" id="per" name="per" required>
                                 <option value="kg">Kilogram (kg)</option>
-                                <option value="bags">Bags</option>
-                                <option value="tons">Tons</option>
-                                <option value="liters">Liters</option>
-                                <option value="units">Units</option>
+                                <option value="50ml">50 ml</option>
+                                <option value="100ml">100 ml</option>
+                                <option value="200ml">200 ml</option>
+                                <option value="500ml">500 ml</option>
+                                <option value="1000ml">1000 ml</option>
                             </select>
                             <div class="invalid-feedback">Please select a unit.</div>
                         </div>

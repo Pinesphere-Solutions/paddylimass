@@ -29,13 +29,10 @@
                         <!-- Product Selection -->
                         <div class="mb-3">
                             <label for="product_name" class="form-label"><i class="fas fa-cubes"></i> Product <span class="text-danger">*</span></label>
-                            <select class="form-select form-select-lg" id="product_name" name="product_name" required>
-                                <option value="">-- Select Product --</option>
-                                <option value="rice" {% if stock.product_name == 'rice' %}selected{% endif %}>Rice</option>
-                                <option value="paddy" {% if stock.product_name == 'paddy' %}selected{% endif %}>Paddy</option>
-                            </select>
-                            <div class="invalid-feedback">Please select a product.</div>
-                        </div>
+                            <input type="text" class="form-control form-control-lg" id="product_name" name="product_name"
+                                value="{{ stock.product_name|default:'' }}" required>
+                            <div class="invalid-feedback">Please enter a product name.</div>
+                        </div>  
 
                         <!-- Batch Number -->
                         <div class="mb-3">
@@ -81,15 +78,16 @@
                             <div class="invalid-feedback">Please enter a valid quantity.</div>
                         </div>
 
-                        <!-- Unit of Measurement -->
+                       <!-- Unit of Measurement -->
                         <div class="mb-3">
                             <label for="per" class="form-label"><i class="fas fa-ruler"></i> Unit (Per) <span class="text-danger">*</span></label>
                             <select class="form-select form-select-lg" id="per" name="per" required>
                                 <option value="kg" {% if stock.per == 'kg' %}selected{% endif %}>Kilogram (kg)</option>
-                                <option value="bags" {% if stock.per == 'bags' %}selected{% endif %}>Bags</option>
-                                <option value="tons" {% if stock.per == 'tons' %}selected{% endif %}>Tons</option>
-                                <option value="liters" {% if stock.per == 'liters' %}selected{% endif %}>Liters</option>
-                                <option value="units" {% if stock.per == 'units' %}selected{% endif %}>Units</option>
+                                <option value="50ml" {% if stock.per == '50ml' %}selected{% endif %}>50 ml</option>
+                                <option value="100ml" {% if stock.per == '100ml' %}selected{% endif %}>100 ml</option>
+                                <option value="200ml" {% if stock.per == '200ml' %}selected{% endif %}>200 ml</option>
+                                <option value="500ml" {% if stock.per == '500ml' %}selected{% endif %}>500 ml</option>
+                                <option value="1000ml" {% if stock.per == '1000ml' %}selected{% endif %}>1000 ml</option>
                             </select>
                             <div class="invalid-feedback">Please select a unit.</div>
                         </div>
