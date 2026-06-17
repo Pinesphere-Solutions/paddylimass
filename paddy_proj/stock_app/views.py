@@ -6,6 +6,7 @@ from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 from .models import Stock, StockDeduction
 from paddy_app.models import AdminTable
+from decimal import Decimal, InvalidOperation
 import json
 
 
@@ -154,13 +155,25 @@ def add_stock(request):
                 admin_id = request.POST.get('admin_id')
                 admin = AdminTable.objects.get(admin_id=admin_id)
             
+            # Convert rate to Decimal explicitly - request.POST values are
+            # always strings, and passing a raw string into the model causes
+            # a TypeError during the amount calculation in Stock.save()
+            try:
+                rate_value = Decimal(request.POST.get('rate'))
+            except (InvalidOperation, TypeError):
+                messages.error(request, "Invalid rate value. Please enter a valid number.")
+                admins = AdminTable.objects.all() if role == 'superadmin' else None
+                context = {'admins': admins, 'role': role}
+                template_name = get_template_name('stock_app/add_stock.html', role)
+                return render(request, template_name, context)
+            
             stock = Stock.objects.create(
                 admin=admin,
                 product_name=request.POST.get('product_name'),
                 batch=request.POST.get('batch'),
                 expiry_date=request.POST.get('expiry_date'),
                 quantity=int(request.POST.get('quantity')),
-                rate=request.POST.get('rate'),
+                rate=rate_value,
                 per=request.POST.get('per', 'kg'),
             )
             
@@ -209,7 +222,18 @@ def update_stock(request, stock_id):
             stock.batch = request.POST.get('batch', stock.batch)
             stock.expiry_date = request.POST.get('expiry_date', stock.expiry_date)
             stock.quantity = int(request.POST.get('quantity', stock.quantity))
-            stock.rate = request.POST.get('rate', stock.rate)
+            
+            # Convert rate to Decimal explicitly - same reasoning as add_stock
+            rate_raw = request.POST.get('rate')
+            if rate_raw is not None:
+                try:
+                    stock.rate = Decimal(rate_raw)
+                except InvalidOperation:
+                    messages.error(request, "Invalid rate value. Please enter a valid number.")
+                    context = {'stock': stock, 'role': role}
+                    template_name = get_template_name('stock_app/update_stock.html', role)
+                    return render(request, template_name, context)
+            
             stock.per = request.POST.get('per', stock.per)
             stock.save()
             
@@ -312,7 +336,7 @@ def stock_api_check(request, stock_id):
         return JsonResponse({
             'success': True,
             'stock_id': stock.stock_id,
-            'product_name': stock.get_product_name_display(),
+            'product_name': stock.product_name,
             'batch': stock.batch,
             'total_quantity': stock.quantity,
             'deducted_quantity': total_deducted,
