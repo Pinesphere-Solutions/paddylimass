@@ -82,7 +82,11 @@
                         <div class="mb-3">
                             <label for="per" class="form-label"><i class="fas fa-ruler"></i> Unit (Per) <span class="text-danger">*</span></label>
                             <select class="form-select form-select-lg" id="per" name="per" required>
-                                <option value="kg" {% if stock.per == 'kg' %}selected{% endif %}>Kilogram (kg)</option>
+                                <option value="0.5kg" {% if stock.per == '0.5kg' %}selected{% endif %}>0.5 kg</option>
+                                <option value="1kg" {% if stock.per == '1kg' %}selected{% endif %}>1 kg</option>
+                                <option value="2kg" {% if stock.per == '2kg' %}selected{% endif %}>2 kg</option>
+                                <option value="5kg" {% if stock.per == '5kg' %}selected{% endif %}>5 kg</option>
+                                <option value="10kg" {% if stock.per == '10kg' %}selected{% endif %}>10 kg</option>
                                 <option value="50ml" {% if stock.per == '50ml' %}selected{% endif %}>50 ml</option>
                                 <option value="100ml" {% if stock.per == '100ml' %}selected{% endif %}>100 ml</option>
                                 <option value="200ml" {% if stock.per == '200ml' %}selected{% endif %}>200 ml</option>
