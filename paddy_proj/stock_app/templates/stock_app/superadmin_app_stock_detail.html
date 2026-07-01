@@ -125,7 +125,7 @@
     <div class="page-header">
         <div>
             <h1 class="page-title"><i class="fas fa-box-open"></i> Stock Details</h1>
-            <p class="page-subtitle">Batch: <strong>{{ stock.batch }}</strong> &nbsp;·&nbsp; <span class="product-badge">{{ stock.get_product_name_display }}</span></p>
+            <p class="page-subtitle">Batch: <strong>{{ stock.batch }}</strong> &nbsp;·&nbsp; <span class="product-badge">{{ stock.product_name }}</span></p>
         </div>
         <div class="header-actions">
             <a href="{% url 'stock_app:stock_list' %}" class="btn-action btn-back">
@@ -214,7 +214,7 @@
                     </div>
                     <div class="info-item">
                         <span class="info-item-label">Product</span>
-                        <span class="info-item-value"><span class="product-badge">{{ stock.get_product_name_display }}</span></span>
+                        <span class="info-item-value"><span class="product-badge">{{ stock.product_name }}</span></span>
                     </div>
                     <div class="info-item">
                         <span class="info-item-label">Batch</span>
@@ -295,10 +295,9 @@
                         {% for deduction in deductions %}
                         <tr>
                             <td><strong>#{{ deduction.deduction_id }}</strong></td>
+                            <!-- REPLACE WITH THIS -->
                             <td>
-                                <a href="{% url 'orders_app:order_detail' deduction.order_id %}" class="order-link">
-                                    #{{ deduction.order_id }}
-                                </a>
+                                <strong>#{{ deduction.order_id }}</strong>
                             </td>
                             <td><span class="qty-badge">{{ deduction.quantity_deducted }} {{ stock.per }}</span></td>
                             <td>{{ deduction.deduction_date|date:"d M Y, H:i" }}</td>

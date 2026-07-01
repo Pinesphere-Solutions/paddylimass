@@ -12,6 +12,9 @@ import razorpay
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from django.contrib import messages
 from django.utils.timezone import now
+# Add this import at the top of payment_app/views.py
+from stock_app.models import Stock, StockDeduction
+from stock_app.helpers import deduct_stock_for_bill, deduct_stock_for_pesticide_bill
 
 # Import models from paddy_app
 from paddy_app.models import (
@@ -31,34 +34,70 @@ def payment(request):
     """Order payment view for displaying payment details and invoice"""
     id = request.POST.get('order_id')
     order = Orders.objects.get(pk=id)
-    # Assuming you have a related model for order items/products
-    # If not, you'll need to create one to store multiple products per order
+
+    # --- STOCK DEDUCTION ON BILL GENERATION ---
+    already_deducted = StockDeduction.objects.filter(order_id=order.order_id).exists()
+
+    if not already_deducted:
+        if order.product_category_id in (1, 2):
+            # Rice or Paddy — single stock deduction
+            product_map = {1: 'rice', 2: 'paddy'}
+            product_name = product_map.get(order.product_category_id)
+
+            stock = Stock.objects.filter(
+                admin=order.admin,
+                product_name__iexact=product_name
+            ).order_by('created_at').first()
+
+            if stock:
+                success, message, deduction_id = deduct_stock_for_bill(
+                    stock_id=stock.stock_id,
+                    order_id=order.order_id,
+                    quantity=int(order.quantity),
+                    notes=f"Bill generated for Order #{order.order_id}"
+                )
+                if not success:
+                    print(f"[STOCK DEDUCTION FAILED] Order {order.order_id}: {message}")
+            else:
+                print(f"[STOCK WARNING] No stock found for admin {order.admin_id}, product: {product_name}")
+
+        elif order.product_category_id == 3:
+            # Pesticide — deduct each OrderItem individually
+            results = deduct_stock_for_pesticide_bill(order)
+            for result in results:
+                if result['success']:
+                    print(f"[STOCK DEDUCTED] {result['item']}: {result['message']}")
+                else:
+                    print(f"[STOCK DEDUCTION FAILED] {result['item']}: {result['message']}")
+    # --- END STOCK DEDUCTION ---
+
     if order.product_category_id == 3:
         order_items = OrderItems.objects.filter(order=order)
-        order_items = [{'quantity':item.quantity,'price_per_unit':item.price_per_unit,
-                        'total_amount':item.total_amount,'product_name':item.product_name,'unit':item.unit} for item in order_items]
+        order_items = [{'quantity': item.quantity, 'price_per_unit': item.price_per_unit,
+                        'total_amount': item.total_amount, 'product_name': item.product_name,
+                        'unit': item.unit} for item in order_items]
     else:
-        order_items = [{'quantity':order.quantity,'price_per_unit':order.price_per_unit,
-                        'total_amount':order.overall_amount,'product_name':'Paddy' if order.product_category_id == 2 else 'Rice'}]
+        order_items = [{'quantity': order.quantity, 'price_per_unit': order.price_per_unit,
+                        'total_amount': order.overall_amount,
+                        'product_name': 'Paddy' if order.product_category_id == 2 else 'Rice'}]
+
     total_amount = order.overall_amount
-    
-    # Calculate balance due
     paid_amount = order.paid_amount or 0
     balance_due = total_amount - paid_amount
 
-    pending_cash_request = CashPaymentRequest.objects.filter(order=order, status=0).order_by('-created_at').first()
-    
-    # Determine payment status
+    pending_cash_request = CashPaymentRequest.objects.filter(
+        order=order, status=0
+    ).order_by('-created_at').first()
+
     if paid_amount == 0:
-        payment_status = 0  # Pending
+        payment_status = 0
     elif paid_amount < total_amount:
-        payment_status = 1  # Partially Paid
+        payment_status = 1
     else:
-        payment_status = 2  # Fully Paid
-    
-    # Calculate payment deadline date
+        payment_status = 2
+
     payment_deadline = order.order_date + timezone.timedelta(days=order.payment_deadline)
-    
+
     context = {
         'order': order,
         'order_name': 'Paddy' if order.product_category_id == 2 else 'Rice' if order.product_category_id == 1 else 'Fertilizer',
@@ -72,12 +111,11 @@ def payment(request):
         'invoice_date': order.order_date,
         'total_items': sum(item['quantity'] for item in order_items),
         'invoice_number': f"UFs {order.order_id}",
-        'payment_terms': order.payment_deadline,
         'payment_deadline': payment_deadline,
         'amount_in_words': number_to_words_indian(order.overall_amount),
-        # 'business_year': "urakadai "+str(order.order_date.year),
     }
     return render(request, 'payment_app/payment.html', context)
+
 
 # Cash Payment Functions
 @csrf_exempt

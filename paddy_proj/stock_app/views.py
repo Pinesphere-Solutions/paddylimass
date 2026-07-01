@@ -354,4 +354,4 @@ def stock_api_check(request, stock_id):
         return JsonResponse({
             'success': False,
             'message': str(e)
-        }, status=500)
+        }, status=500)   

@@ -118,7 +118,7 @@ box-shadow:0 4px 12px rgba(0,0,0,0.08);overflow:hidden;margin-bottom:2rem;}.tabl
                     {% for stock in stocks %}
                     <tr>
                         <td><span class="batch-name">{{ stock.batch }}</span></td>
-                        <td><span class="product-badge">{{ stock.get_product_name_display }}</span></td>
+                        <td><span class="product-badge">{{ stock.product_name }}</span></td>
                         <td>
                             <div class="quantity-info">
                                 <i class="fas fa-cubes"></i> {{ stock.quantity }} {{ stock.per }}

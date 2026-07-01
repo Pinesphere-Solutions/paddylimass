@@ -216,3 +216,77 @@ def generate_stock_report(admin_id=None):
             'paddy': stocks.filter(product_name='paddy').count(),
         }
     }
+
+
+
+
+def deduct_stock_for_pesticide_bill(order):
+    """
+    Deduct stock for each item in a pesticide order (category 3).
+    Matches by product_name + batch_number + expiry_date + admin.
+
+    Returns:
+        list of dicts: [{'item': item, 'success': bool, 'message': str}]
+    """
+    from paddy_app.models import OrderItems
+
+    results = []
+    items = OrderItems.objects.filter(order=order)
+
+    for item in items:
+        try:
+            # Match stock by product name, batch, expiry date and admin
+            stock = Stock.objects.filter(
+                admin=order.admin,
+                product_name__iexact=item.product_name,
+                batch__iexact=item.batch_number,
+                expiry_date=item.expiry_date,
+            ).first()
+
+            if not stock:
+                results.append({
+                    'item': item.product_name,
+                    'success': False,
+                    'message': f"No matching stock found for {item.product_name} "
+                               f"(Batch: {item.batch_number}, Expiry: {item.expiry_date})"
+                })
+                continue
+
+            # Check availability
+            is_available, msg, available = check_stock_availability(stock.stock_id, item.quantity)
+            if not is_available:
+                results.append({
+                    'item': item.product_name,
+                    'success': False,
+                    'message': msg
+                })
+                continue
+
+            # Deduct
+            deduction = StockDeduction.objects.create(
+                stock=stock,
+                order_id=order.order_id,
+                quantity_deducted=item.quantity,
+                notes=f"Deducted for Order #{order.order_id} - {item.product_name} "
+                      f"Batch: {item.batch_number}"
+            )
+
+            results.append({
+                'item': item.product_name,
+                'success': True,
+                'message': f"Deducted {item.quantity} from stock {stock.stock_id}. "
+                           f"Remaining: {available - item.quantity}",
+                'deduction_id': deduction.deduction_id
+            })
+
+        except Exception as e:
+            results.append({
+                'item': item.product_name,
+                'success': False,
+                'message': f"Error deducting {item.product_name}: {str(e)}"
+            })
+
+    return results
+
+
+    
