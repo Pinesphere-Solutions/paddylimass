@@ -12,9 +12,6 @@ import razorpay
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from django.contrib import messages
 from django.utils.timezone import now
-# Add this import at the top of payment_app/views.py
-from stock_app.models import Stock, StockDeduction
-from stock_app.helpers import deduct_stock_for_bill, deduct_stock_for_pesticide_bill
 
 # Import models from paddy_app
 from paddy_app.models import (
@@ -29,47 +26,10 @@ RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
 RAZORPAY_SECRET = os.getenv("RAZORPAY_SECRET")
 client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_SECRET))
 
-# Order Payment Views
 def payment(request):
     """Order payment view for displaying payment details and invoice"""
     id = request.POST.get('order_id')
     order = Orders.objects.get(pk=id)
-
-    # --- STOCK DEDUCTION ON BILL GENERATION ---
-    already_deducted = StockDeduction.objects.filter(order_id=order.order_id).exists()
-
-    if not already_deducted:
-        if order.product_category_id in (1, 2):
-            # Rice or Paddy — single stock deduction
-            product_map = {1: 'rice', 2: 'paddy'}
-            product_name = product_map.get(order.product_category_id)
-
-            stock = Stock.objects.filter(
-                admin=order.admin,
-                product_name__iexact=product_name
-            ).order_by('created_at').first()
-
-            if stock:
-                success, message, deduction_id = deduct_stock_for_bill(
-                    stock_id=stock.stock_id,
-                    order_id=order.order_id,
-                    quantity=int(order.quantity),
-                    notes=f"Bill generated for Order #{order.order_id}"
-                )
-                if not success:
-                    print(f"[STOCK DEDUCTION FAILED] Order {order.order_id}: {message}")
-            else:
-                print(f"[STOCK WARNING] No stock found for admin {order.admin_id}, product: {product_name}")
-
-        elif order.product_category_id == 3:
-            # Pesticide — deduct each OrderItem individually
-            results = deduct_stock_for_pesticide_bill(order)
-            for result in results:
-                if result['success']:
-                    print(f"[STOCK DEDUCTED] {result['item']}: {result['message']}")
-                else:
-                    print(f"[STOCK DEDUCTION FAILED] {result['item']}: {result['message']}")
-    # --- END STOCK DEDUCTION ---
 
     if order.product_category_id == 3:
         order_items = OrderItems.objects.filter(order=order)
@@ -114,8 +74,7 @@ def payment(request):
         'payment_deadline': payment_deadline,
         'amount_in_words': number_to_words_indian(order.overall_amount),
     }
-    return render(request, 'payment_app/payment.html', context)
-
+    return render(request, 'payment_app/payment.html', context) 
 
 # Cash Payment Functions
 @csrf_exempt

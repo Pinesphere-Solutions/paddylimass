@@ -9,6 +9,10 @@ from datetime import timedelta, date
 import json
 from django.contrib import messages
 
+# Add these imports at the top of orders_app/views.py
+from stock_app.models import Stock, StockDeduction
+from stock_app.helpers import deduct_stock_for_bill, deduct_stock_for_pesticide_bill
+
 # Import models from paddy_app
 from paddy_app.models import (
     Orders, CustomerTable, AdminTable, OrderItems, 
@@ -579,7 +583,7 @@ def super_admin_orders(request):
 
     return render(request, "orders_app/superadmin_orders.html", context)
 
-# Order Placement Views
+
 @role_required(["admin", "superadmin"])
 def place_order(request):
     role = request.session.get("role")
@@ -589,38 +593,29 @@ def place_order(request):
     if not admin_id:
         return redirect("login_app:login")
 
-    # Get admin info
     admin = AdminTable.objects.get(admin_id=admin_id)
-    
-    # Allow placing orders to any customer (platform-wide), but exclude admin themselves
-    # Filter out customers that have the same phone number or email as the admin
     customers = CustomerTable.objects.exclude(
         Q(phone_number=admin.phone_number) | Q(email=admin.email)
     )
-    
-    # Handle order submission - create order and redirect to dashboard
+
     if request.method == "POST":
-        # Prevent duplicate submissions using session token
         form_token = request.POST.get('form_token')
         session_token = request.session.get('last_order_token')
-        
+
         if form_token and form_token == session_token:
-            # Duplicate submission detected
             messages.warning(request, "Order already submitted. Redirecting to orders page.")
             if is_superadmin:
                 return redirect('orders_app:super_admin_orders')
             else:
                 return redirect('orders_app:admin_orders')
-        
-        # Store the token to prevent duplicate submissions
+
         if form_token:
             request.session['last_order_token'] = form_token
-        
-        # For non-superadmin users, check product access before processing order
+
         if not is_superadmin:
             from paddy_app.models import Subscription
             product_access = Subscription.get_admin_product_access(admin_id)
-            
+
             product_category_id = request.POST.get("product_category_id")
             if product_category_id == "1" and not product_access["rice"]:
                 messages.error(request, "You don't have access to place Rice orders. Please subscribe to Rice access first.")
@@ -631,29 +626,27 @@ def place_order(request):
             elif product_category_id == "3" and not product_access["pesticide"]:
                 messages.error(request, "You don't have access to place Pesticide orders. Please subscribe to Pesticide access first.")
                 return redirect('payment_app:admin_product_subscription')
-        
-        # Process order data
+
         if str(request.POST.get("product_category_id")) != "3":
-            # Regular order (Rice/Paddy)
+            # Rice / Paddy order
             customer_id = request.POST.get("customer")
             product_category_id = request.POST.get("product_category_id")
             quantity = float(request.POST.get("quantity")) if request.POST.get("quantity") else 0
             price_per_unit = float(request.POST.get("price_per_unit")) if request.POST.get("price_per_unit") else 0
             overall_amount = quantity * price_per_unit
-            
+
             customer = CustomerTable.objects.get(customer_id=customer_id)
-            
-            # Prevent admin from placing orders to themselves
             admin = AdminTable.objects.get(admin_id=admin_id)
+
             if customer.phone_number == admin.phone_number or customer.email == admin.email:
                 messages.error(request, "You cannot place orders to yourself. Please select a different customer.")
                 return redirect('orders_app:place_order')
-            
+
             gst = customer.GST
 
             order = Orders.objects.create(
                 customer=customer,
-                admin=AdminTable.objects.get(admin_id=admin_id),
+                admin=admin,
                 payment_status=0,
                 delivery_status=0,
                 product_category_id=product_category_id,
@@ -668,47 +661,63 @@ def place_order(request):
                 driver_ph_no=request.POST.get("driver_ph_no"),
                 order_date=date.today()
             )
-            
-            # Create notifications for order placement
-            product_name = "Rice" if product_category_id == "1" else "Paddy"
-            
-            # Notification for customer
+
+            # --- STOCK DEDUCTION FOR RICE/PADDY ---
+            product_map = {'1': 'rice', '2': 'paddy'}
+            product_name = product_map.get(str(product_category_id))
+
+            if product_name:
+                stock = Stock.objects.filter(
+                    admin=order.admin,
+                    product_name__iexact=product_name
+                ).order_by('created_at').first()
+
+                if stock:
+                    success, message, deduction_id = deduct_stock_for_bill(
+                        stock_id=stock.stock_id,
+                        order_id=order.order_id,
+                        quantity=int(quantity),
+                        notes=f"Order #{order.order_id} placed"
+                    )
+                    if not success:
+                        print(f"[STOCK DEDUCTION FAILED] Order {order.order_id}: {message}")
+                else:
+                    print(f"[STOCK WARNING] No stock found for admin {admin_id}, product: {product_name}")
+            # --- END STOCK DEDUCTION ---
+
+            product_name_display = "Rice" if product_category_id == "1" else "Paddy"
             create_notification(
                 user_type='customer',
                 user_id=customer.customer_id,
                 notification_type='order_placed',
-                title=f'New {product_name} Order Placed',
-                message=f'Your {product_name} order #{order.order_id} has been placed successfully. Quantity: {quantity}, Amount: ₹{overall_amount}',
+                title=f'New {product_name_display} Order Placed',
+                message=f'Your {product_name_display} order #{order.order_id} has been placed successfully. Quantity: {quantity}, Amount: ₹{overall_amount}',
                 related_order_id=order.order_id
             )
-            
-            # Notification for admin
             create_notification(
                 user_type='admin',
                 user_id=admin_id,
                 notification_type='order_placed',
-                title=f'New {product_name} Order Received',
-                message=f'New {product_name} order #{order.order_id} from {customer.first_name} {customer.last_name}. Amount: ₹{overall_amount}',
+                title=f'New {product_name_display} Order Received',
+                message=f'New {product_name_display} order #{order.order_id} from {customer.first_name} {customer.last_name}. Amount: ₹{overall_amount}',
                 related_order_id=order.order_id
             )
-                
+
         else:
-            # Multiple products order (Pesticides)
+            # Pesticide order
             customer_id = request.POST.get("customer")
             customer = CustomerTable.objects.get(customer_id=customer_id)
-            
-            # Prevent admin from placing orders to themselves
             admin = AdminTable.objects.get(admin_id=admin_id)
+
             if customer.phone_number == admin.phone_number or customer.email == admin.email:
                 messages.error(request, "You cannot place orders to yourself. Please select a different customer.")
                 return redirect('orders_app:place_order')
-            
+
             gst = customer.GST
-            
-            # Create order
+
             order = Orders.objects.create(
                 customer=customer,
-                admin=AdminTable.objects.get(admin_id=admin_id),
+                admin=admin,
                 payment_status=0,
                 quantity=0,
                 product_category_id=request.POST.get("product_category_id"),
@@ -721,8 +730,7 @@ def place_order(request):
                 driver_ph_no=request.POST.get("driver_ph_no"),
                 order_date=date.today()
             )
-            
-            # Process each order item
+
             product_names = request.POST.getlist("product_name[]")
             batch_numbers = request.POST.getlist("batch_number[]")
             expiry_dates = request.POST.getlist("expiry_date[]")
@@ -730,14 +738,11 @@ def place_order(request):
             prices = request.POST.getlist("price_per_unit[]")
             units = request.POST.getlist("unit[]")
             totals = request.POST.getlist("total_amount[]")
-            
-            # Create order items
+
             order_items = []
             for i in range(len(product_names)):
-                # Skip empty rows
                 if not product_names[i].strip():
                     continue
-                    
                 item = OrderItems(
                     order=order,
                     product_name=product_names[i],
@@ -749,14 +754,20 @@ def place_order(request):
                     unit=units[i]
                 )
                 order_items.append(item)
-            
+
             order.overall_amount = sum(float(totals[i]) for i in range(len(totals)) if totals[i].strip())
             order.save()
-            
-            # Bulk create items
             OrderItems.objects.bulk_create(order_items)
-            
-            # Create notifications for pesticide order
+
+            # --- STOCK DEDUCTION FOR PESTICIDE ---
+            results = deduct_stock_for_pesticide_bill(order)
+            for result in results:
+                if result['success']:
+                    print(f"[STOCK DEDUCTED] {result['item']}: {result['message']}")
+                else:
+                    print(f"[STOCK DEDUCTION FAILED] {result['item']}: {result['message']}")
+            # --- END STOCK DEDUCTION ---
+
             create_notification(
                 user_type='customer',
                 user_id=customer.customer_id,
@@ -765,8 +776,6 @@ def place_order(request):
                 message=f'Your pesticide order #{order.order_id} with multiple items has been placed successfully. Total Amount: ₹{order.overall_amount}',
                 related_order_id=order.order_id
             )
-            
-            # Notification for admin
             create_notification(
                 user_type='admin',
                 user_id=admin_id,
@@ -775,25 +784,21 @@ def place_order(request):
                 message=f'New pesticide order #{order.order_id} from {customer.first_name} {customer.last_name} with {len(order_items)} items. Total Amount: ₹{order.overall_amount}',
                 related_order_id=order.order_id
             )
-        
+
         messages.success(request, f"Order #{order.order_id} placed successfully!")
-        
-        # Clear the form token to prevent reuse
+
         if 'last_order_token' in request.session:
             del request.session['last_order_token']
-        
-        # Redirect back to appropriate orders page based on role
+
         if is_superadmin:
             return redirect('orders_app:super_admin_orders')
         else:
             return redirect('orders_app:admin_orders')
-    
-    # Render the initial form
+
     context = {"customers": customers}
-    
-    # For admin users, check product access
+
     if not is_superadmin:
         from paddy_app.models import Subscription
         context["product_access"] = Subscription.get_admin_product_access(admin_id)
-    
+
     return render(request, "orders_app/place_order.html" if is_superadmin else "orders_app/admin_place_order.html", context)
