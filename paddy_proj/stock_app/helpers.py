@@ -238,8 +238,8 @@ def deduct_stock_for_pesticide_bill(order):
             # Match stock by product name, batch, expiry date and admin
             stock = Stock.objects.filter(
                 admin=order.admin,
-                product_name__iexact=item.product_name,
-                batch__iexact=item.batch_number,
+                product_name__iexact=item.product_name.strip(),  # .strip() added
+                batch__iexact=item.batch_number.strip(),           # .strip() added
                 expiry_date=item.expiry_date,
             ).first()
 
