@@ -63,37 +63,39 @@
                 <form method="POST">
                     {% csrf_token %}
 
+                    <!-- Product Type -->
                     <div class="form-group">
-                    <label for="product_name" class="form-label">
-                        <i class="fas fa-cubes"></i> Product Type <span>*</span>
-                    </label>
-                    <input type="text" class="form-control" id="product_name" name="product_name" required>
-                </div>
+                        <label for="product_name" class="form-label">
+                            <i class="fas fa-cubes"></i> Product Type <span>*</span>
+                        </label>
+                        <input type="text" class="form-input" id="product_name" name="product_name" required>
+                    </div>
 
-                    <div class="form-group">
+                    <!-- Batch Number — hidden for rice, shown and required for others -->
+                    <div class="form-group" id="batch_group" style="display:none;">
                         <label for="batch" class="form-label">
                             <i class="fas fa-barcode"></i> Batch Number <span>*</span>
                         </label>
-                        <input 
-                            type="text" 
-                            class="form-input" 
-                            id="batch" 
-                            name="batch" 
+                        <input
+                            type="text"
+                            class="form-input"
+                            id="batch"
+                            name="batch"
                             placeholder="e.g., BATCH001"
-                            required
                         >
                         <div class="form-hint">Unique identifier for this stock batch</div>
                     </div>
 
+                    <!-- Quantity -->
                     <div class="form-group">
                         <label for="quantity" class="form-label">
                             <i class="fas fa-weight"></i> Quantity <span>*</span>
                         </label>
-                        <input 
-                            type="number" 
-                            class="form-input" 
-                            id="quantity" 
-                            name="quantity" 
+                        <input
+                            type="number"
+                            class="form-input"
+                            id="quantity"
+                            name="quantity"
                             placeholder="Enter quantity"
                             min="1"
                             required
@@ -101,33 +103,30 @@
                         >
                     </div>
 
-                   <div class="form-group">
+                    <!-- Unit — switches between kg and ml based on product -->
+                    <div class="form-group">
                         <label for="per" class="form-label">
                             <i class="fas fa-ruler"></i> Unit <span>*</span>
                         </label>
                         <select class="form-select" id="per" name="per" required>
-                            <option value="0.5kg">Half kg (0.5 kg)</option>
-                            <option value="1kg">1 kg</option>
-                            <option value="2kg">2 kg</option>
+                            <!-- Default kg options for rice — updated by JS -->
                             <option value="5kg">5 kg</option>
                             <option value="10kg">10 kg</option>
-                            <option value="50ml">50 ml</option>
-                            <option value="100ml">100 ml</option>
-                            <option value="200ml">200 ml</option>
-                            <option value="500ml">500 ml</option>
-                            <option value="1000ml">1000 ml</option>
+                            <option value="26kg">26 kg</option>
+                            <option value="50kg">50 kg</option>
                         </select>
                     </div>
 
+                    <!-- Rate -->
                     <div class="form-group">
                         <label for="rate" class="form-label">
                             <i class="fas fa-rupee-sign"></i> Rate per Unit <span>*</span>
                         </label>
-                        <input 
-                            type="number" 
-                            class="form-input" 
-                            id="rate" 
-                            name="rate" 
+                        <input
+                            type="number"
+                            class="form-input"
+                            id="rate"
+                            name="rate"
                             placeholder="Enter rate"
                             step="0.01"
                             min="0"
@@ -136,15 +135,16 @@
                         >
                     </div>
 
+                    <!-- Expiry Date -->
                     <div class="form-group">
                         <label for="expiry_date" class="form-label">
                             <i class="fas fa-calendar"></i> Expiry Date <span>*</span>
                         </label>
-                        <input 
-                            type="date" 
-                            class="form-input" 
-                            id="expiry_date" 
-                            name="expiry_date" 
+                        <input
+                            type="date"
+                            class="form-input"
+                            id="expiry_date"
+                            name="expiry_date"
                             required
                         >
                     </div>
@@ -180,11 +180,48 @@ function calculateAmount() {
     document.getElementById('amountValue').textContent = amount;
 }
 
+function updateUnitOptions() {
+    const productName = document.getElementById('product_name').value.trim().toLowerCase();
+    const perSelect = document.getElementById('per');
+    const batchInput = document.getElementById('batch');
+    const batchGroup = document.getElementById('batch_group');
+
+    const kgOptions = `
+        <option value="5kg">5 kg</option>
+        <option value="10kg">10 kg</option>
+        <option value="26kg">26 kg</option>
+        <option value="50kg">50 kg</option>
+    `;
+
+    const mlOptions = `
+        <option value="50ml">50 ml</option>
+        <option value="100ml">100 ml</option>
+        <option value="200ml">200 ml</option>
+        <option value="500ml">500 ml</option>
+        <option value="1000ml">1000 ml</option>
+    `;
+
+    if (productName === 'rice') {
+        // Rice — kg units, hide batch
+        perSelect.innerHTML = kgOptions;
+        batchGroup.style.display = 'none';
+        batchInput.removeAttribute('required');
+        batchInput.value = '';
+    } else {
+        // Pesticide or anything else — ml units, show batch
+        perSelect.innerHTML = mlOptions;
+        batchGroup.style.display = 'block';
+        batchInput.setAttribute('required', 'required');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     calculateAmount();
+    document.getElementById('product_name').addEventListener('input', updateUnitOptions);
+    // Run once on load to set initial state
+    updateUnitOptions();
 });
 </script>
 
 {% endblock %}
-   
 
